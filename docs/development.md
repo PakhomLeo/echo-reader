@@ -85,8 +85,9 @@ Inno Setup 时生成每用户 installer。`-SkipInstaller` 只跳过 installer �
 AppPaths 注入、重启持久、空闲 shutdown、SessionBridge 端口释放以及宿主强杀后 Rust watchdog。
 若 `127.0.0.1:19876` 已占用，烟测 fail closed，不会停止占用进程。
 
-公开分发 standalone 或 installer 前需满足的第三方许可义务（FFmpeg LGPL-3.0 等）见
-[安装文档](installation.md#打包形式与许可)。
+公开分发 standalone 或 installer 前需满足的第三方许可义务（FFmpeg 及其静态链接库等）见
+[安装文档](installation.md#打包形式与许可)。目前固定的 BtbN "lgpl" FFmpeg 经 chromaprint 含 GPL 的
+FFTW，`build-package.ps1` 会拒绝它；改用关闭 chromaprint 的自编构建之前不发布 Windows 安装包。
 
 ## 文档归属
 

@@ -230,7 +230,7 @@ asked to rescan, which also refreshes the search index.
 - FFmpeg on `PATH` for audio/video imports
 - [Deno](https://deno.com/) for yt-dlp's JavaScript challenges (YouTube and others)
 - Optional: [mise](https://mise.jdx.dev) installs the pinned tool versions from `mise.toml`,
-  including an LGPL FFmpeg build
+  including a BtbN "lgpl" FFmpeg build (see [FFmpeg](#ffmpeg) for why it is not a pure LGPL build)
 - Optional: Microsoft Edge for JavaScript rendering; Chrome for the Session Bridge extension
 
 Local Whisper ASR targets an Intel GPU through OpenVINO and does not silently fall back to the
@@ -266,8 +266,9 @@ mise install
 ```
 
 `scripts\build-package.ps1 -Version <x.y.z>` builds the standalone bundle and, when Inno Setup is
-available, the per-user installer. See [docs/installation.md](docs/installation.md) and
-[docs/development.md](docs/development.md).
+available, the per-user installer. With the FFmpeg pinned today it stops at the FFmpeg check
+because that build contains FFTW (see [FFmpeg](#ffmpeg)). See
+[docs/installation.md](docs/installation.md) and [docs/development.md](docs/development.md).
 
 ## Optional dependencies
 
@@ -294,16 +295,26 @@ repository, our wheels or sdists, or the Windows installer and bundle (the Windo
 finds them). If you do not install the `tts` extra, nothing GPL-licensed is on your machine because
 of Echo Reader, and read-aloud is simply unavailable.
 
-### FFmpeg (LGPL build)
+### FFmpeg
 
 Echo Reader runs `ffmpeg` and `ffprobe` as separate programs and works with any recent FFmpeg on
-your `PATH` (or `[audio].ffmpeg_path`). `mise install` pins an LGPL build from
-[BtbN/FFmpeg-Builds](https://github.com/BtbN/FFmpeg-Builds) (`autobuild-2026-07-31-14-10`,
-FFmpeg `n8.1.2-34-g9b6c8969e0` from the `release/8.1` branch) with fixed asset names and SHA-256
-checksums; it has no libx264/libx265 and encodes H.264 with OpenH264. The Windows bundle ships the
-`lgpl-shared` variant as replaceable DLLs together with `licenses/FFMPEG_SOURCE.txt`; the matching
-FFmpeg source archive is attached to each GitHub release. Details are in
-[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+your `PATH` (or `[audio].ffmpeg_path`). Echo Reader's own MIT-licensed code does not link FFmpeg.
+`mise install` pins a build from [BtbN/FFmpeg-Builds](https://github.com/BtbN/FFmpeg-Builds)
+(`autobuild-2026-07-31-14-10`, FFmpeg `n8.1.2-34-g9b6c8969e0` from the `release/8.1` branch, the
+`lgpl` / `lgpl-shared` variants) with fixed asset names and SHA-256 checksums; it has no
+libx264/libx265 and encodes H.264 with OpenH264.
+
+**This is not a pure LGPL build.** BtbN configures it without `--enable-gpl` / `--enable-nonfree`,
+but it statically links chromaprint, which BtbN builds against FFTW 3.3.11 (`-DFFT_LIB=fftw3`), and
+FFTW is licensed GPL-2.0-or-later. In the Windows `lgpl-shared` variant FFTW is inside
+`avformat-62.dll`; the Linux build contains it too. The build also statically links other LGPL
+libraries (LAME, soxr, libbluray and more) and MPL-2.0 libraries (SRT, libzmq).
+
+For that reason **no Windows installer or bundle is published** until Echo Reader switches to a
+trimmed FFmpeg that we build ourselves without chromaprint. `scripts/build-package.ps1` refuses an
+FFmpeg whose executable or DLLs contain FFTW, so the build pinned today cannot be packaged. The
+FFmpeg source and the BtbN build scripts of the pinned build are attached to the GitHub release.
+Details and the plan are in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 ## Configuration
 
@@ -492,7 +503,7 @@ single-user local app.
 
 **Do I need FFmpeg with libx264?**
 No. Any recent FFmpeg works; playback copies use libx264 if present, otherwise libopenh264 or
-`h264_mf`. The pinned LGPL build from `mise.toml` is enough.
+`h264_mf`. The build pinned in `mise.toml` is enough.
 
 **Is this related to other projects named Echo or Echo Reader?**
 No. This project is not affiliated with other projects that use the same or a similar name.
@@ -515,7 +526,8 @@ The project is versioned 0.1.0 and has no stability guarantees yet.
 Known limitations:
 
 - Local Whisper needs an Intel GPU; there is no CPU fallback for that engine.
-- The Windows installer has not yet been built and tested on a clean machine for this release.
+- No Windows installer or bundle is published yet: the pinned FFmpeg build contains GPL FFTW (see
+  [FFmpeg](#ffmpeg)), and the installer has not yet been built and tested on a clean machine.
 - The read-aloud chain depends on GPL-3.0 packages; replacing eSpeak with a G2P without
   that dependency is planned.
 
@@ -551,8 +563,10 @@ Third-party components keep their own licenses; see
   Windows installer, standalone bundle or any other bundle or sidecar — the Windows build
   excludes them explicitly and fails if they appear. If you redistribute an environment that
   includes them, the GPL-3.0 applies to that distribution;
-- the Windows bundle ships an unmodified **LGPL-3.0** FFmpeg build (BtbN `lgpl-shared`, no
-  libx264/libx265). Its license text and source links (`licenses/FFMPEG_SOURCE.txt`) are in the
-  bundle, and the FFmpeg DLLs in `tools\` can be replaced with your own build;
+- **FFmpeg**: Echo Reader's MIT code only runs `ffmpeg` / `ffprobe` as separate programs and
+  does not link FFmpeg. The BtbN "lgpl" build pinned in `mise.toml` is **not** a pure LGPL build:
+  through chromaprint it statically links FFTW, which is GPL-2.0-or-later. No Windows installer or
+  bundle is published until it is replaced by a trimmed FFmpeg built without chromaprint (see
+  [FFmpeg](#ffmpeg));
 - model weights (Whisper, Kokoro-82M, Fun-ASR-Nano, PP-OCR) are downloaded at runtime and are
   licensed by their authors (Apache-2.0 / MIT).

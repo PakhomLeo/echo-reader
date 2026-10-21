@@ -204,7 +204,8 @@ Echo Reader 是一个本地优先的网页内容阅读应用。粘贴文章、�
 - 前端需要 [Bun](https://bun.sh/)，Vitest 需要 Node.js ≥ 22
 - 导入音视频需要 `PATH` 中有 FFmpeg
 - yt-dlp 处理 JavaScript 校验（YouTube 等）需要 [Deno](https://deno.com/)
-- 可选：[mise](https://mise.jdx.dev) 按 `mise.toml` 安装固定版本的工具，包括 LGPL 版 FFmpeg
+- 可选：[mise](https://mise.jdx.dev) 按 `mise.toml` 安装固定版本的工具，包括 BtbN 的 "lgpl" 版 FFmpeg
+  （它为什么不是纯 LGPL 构建，见 [FFmpeg](#ffmpeg)）
 - 可选：JavaScript 渲染需要 Microsoft Edge；会话桥扩展需要 Chrome
 
 本地 Whisper 识别通过 OpenVINO 使用 Intel GPU，不会悄悄回退到 CPU；Fun-ASR-Nano 可在 CPU、CUDA、
@@ -240,7 +241,8 @@ mise install
 ```
 
 `scripts\build-package.ps1 -Version <x.y.z>` 构建免安装程序束；装有 Inno Setup 时还会构建按用户安装的
-安装包。详见 [docs/installation.md](docs/installation.md) 和 [docs/development.md](docs/development.md)。
+安装包。用目前固定的 FFmpeg 时，构建会在 FFmpeg 检查处停下，因为该构建含 FFTW（见 [FFmpeg](#ffmpeg)）。
+详见 [docs/installation.md](docs/installation.md) 和 [docs/development.md](docs/development.md)。
 
 ## 可选依赖
 
@@ -264,14 +266,23 @@ eSpeak NG 是**由你自行安装的可选依赖**。只有 `uv sync --extra tts
 它不在本仓库、我们的 wheel / sdist、Windows 安装包和程序束里（Windows 构建一旦发现它们就会失败）。
 不安装 `tts` extra，你的电脑上就不会因为 Echo Reader 而出现任何 GPL 许可的组件，只是朗读功能不可用。
 
-### FFmpeg（LGPL 构建）
+### FFmpeg
 
 Echo Reader 把 `ffmpeg` 和 `ffprobe` 作为独立程序调用，`PATH` 里（或 `[audio].ffmpeg_path` 指定的）任何
-较新的 FFmpeg 都能用。`mise install` 固定安装 [BtbN/FFmpeg-Builds](https://github.com/BtbN/FFmpeg-Builds)
-的 LGPL 构建（`autobuild-2026-07-31-14-10`，FFmpeg `release/8.1` 分支的 `n8.1.2-34-g9b6c8969e0`），资产名和
-SHA-256 校验值都已写死；它不含 libx264/libx265，用 OpenH264 编码 H.264。Windows 程序束附带 `lgpl-shared`
-版本，FFmpeg 以可替换的 DLL 形式提供，并附 `licenses/FFMPEG_SOURCE.txt`；对应的 FFmpeg 源码包会挂在每个
-GitHub Release 上。详见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
+较新的 FFmpeg 都能用。Echo Reader 自己的 MIT 代码不链接 FFmpeg。`mise install` 固定安装
+[BtbN/FFmpeg-Builds](https://github.com/BtbN/FFmpeg-Builds) 的构建（`autobuild-2026-07-31-14-10`，FFmpeg
+`release/8.1` 分支的 `n8.1.2-34-g9b6c8969e0`，`lgpl` / `lgpl-shared` 变体），资产名和 SHA-256 校验值都已
+写死；它不含 libx264/libx265，用 OpenH264 编码 H.264。
+
+**它不是纯 LGPL 构建。** BtbN 配置时没有用 `--enable-gpl` / `--enable-nonfree`，但它静态链接了 chromaprint，
+而 BtbN 编 chromaprint 时用的是 FFTW 3.3.11（`-DFFT_LIB=fftw3`），FFTW 的许可证是 GPL-2.0-or-later。
+Windows `lgpl-shared` 变体里 FFTW 在 `avformat-62.dll` 中，Linux 构建里同样有。这个构建还静态链接了其他
+LGPL 库（LAME、soxr、libbluray 等）和 MPL-2.0 库（SRT、libzmq）。
+
+因此，在 Echo Reader 改用我们自己编译、关闭 chromaprint 的精简 FFmpeg 之前，**不发布 Windows 安装包和
+程序束**。`scripts/build-package.ps1` 发现 FFmpeg 可执行文件或 DLL 里含 FFTW 就会拒绝打包，所以目前固定的
+构建无法打包。固定构建对应的 FFmpeg 源码和 BtbN 构建脚本挂在 GitHub Release 上。详情和后续计划见
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
 
 ## 配置
 
@@ -441,7 +452,7 @@ Echo Reader 是个人阅读和笔记工具，如何使用由你自己负责。
 
 **FFmpeg 必须带 libx264 吗？**
 不需要。任何较新的 FFmpeg 都能用；生成播放副本时有 libx264 就用，否则用 libopenh264 或 `h264_mf`。
-`mise.toml` 里固定的 LGPL 构建就够用。
+`mise.toml` 里固定的构建就够用。
 
 **这个项目和其他叫 Echo 或 Echo Reader 的项目有关吗？**
 没有。本项目与使用相同或近似名称的其他项目没有任何关系。
@@ -463,7 +474,8 @@ Windows 上使用 `scripts\verify.ps1`。贡献流程见 [CONTRIBUTING.md](CONTR
 已知限制：
 
 - 本地 Whisper 需要 Intel GPU，这个引擎没有 CPU 回退。
-- 本次发布的 Windows 安装包还没有在干净的机器上构建和测试过。
+- 目前不发布 Windows 安装包和程序束：固定的 FFmpeg 构建含 GPL 的 FFTW（见 [FFmpeg](#ffmpeg)），
+  安装包也还没有在干净的机器上构建和测试过。
 - 朗读链路依赖 GPL-3.0 软件包；计划换成不依赖 eSpeak 的 G2P。
 
 ## 文档
@@ -494,8 +506,9 @@ Echo Reader 以 [MIT 许可证](LICENSE) 发布。
   本项目**不分发**它们：不在本仓库中，不在我们构建的 wheel / sdist 中，也不在 Windows 安装包、免安装
   程序束或任何其他 bundle / sidecar 中——Windows 构建会显式排除它们，一旦出现即构建失败。如果你再分发
   包含它们的环境，该分发须遵守 GPL-3.0；
-- Windows 程序束附带未修改的 FFmpeg **LGPL-3.0** 构建（BtbN `lgpl-shared`，不含 libx264/libx265）。
-  许可证原文和源码链接（`licenses/FFMPEG_SOURCE.txt`）都在程序束里，`tools\` 下的 FFmpeg DLL 可以换成
-  你自己编译的版本；
+- **FFmpeg**：Echo Reader 的 MIT 代码只把 `ffmpeg` / `ffprobe` 当独立程序调用，不链接 FFmpeg。
+  `mise.toml` 固定的 BtbN "lgpl" 构建**不是**纯 LGPL 构建：它经 chromaprint 静态链接了 GPL-2.0-or-later
+  的 FFTW。在换成关闭 chromaprint 的自编精简 FFmpeg 之前，不发布 Windows 安装包和程序束（见
+  [FFmpeg](#ffmpeg)）；
 - 模型权重（Whisper、Kokoro-82M、Fun-ASR-Nano、PP-OCR）在运行时下载，许可证由各自作者规定
   （Apache-2.0 / MIT）。

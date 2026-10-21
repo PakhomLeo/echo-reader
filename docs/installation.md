@@ -75,10 +75,17 @@ standalone zip 是免安装程序束，但仍按安装模式使用 Documents/LOC
 把用户数据放在解压目录的 portable app。installer 在此程序束上增加每用户安装、快捷方式和
 升级替换。
 
-源码以 MIT 许可证发布（见根目录 `LICENSE`）。二进制程序束另含第三方组件：BtbN FFmpeg
-LGPL-3.0 构建（`lgpl-shared`，在 `mise.toml` 中按资产名和 SHA-256 固定，不含 libx264/libx265）、
-PyInstaller 引导程序（GPLv2+ 带打包例外）、Deno（MIT）以及 OpenVINO / sherpa-onnx 等。公开分发
-installer 或 standalone zip 前，必须随包提供这些组件的许可证原文，并在发布页附上 FFmpeg 对应源码
-（构建脚本已复制 `licenses/FFMPEG_SOURCE.txt`，写明源码链接和替换 DLL 的方法）。构建脚本会拒绝带
-`--enable-gpl` / `--enable-nonfree` 或 libx264/libx265 的 FFmpeg。详见
-`THIRD_PARTY_NOTICES.md`。
+源码以 MIT 许可证发布（见根目录 `LICENSE`），只把 `ffmpeg` / `ffprobe` 当独立程序调用，不链接
+FFmpeg。二进制程序束另含第三方组件：FFmpeg（目前 `mise.toml` 按资产名和 SHA-256 固定的是 BtbN
+`lgpl-shared` 构建，不含 libx264/libx265）、PyInstaller 引导程序（GPLv2+ 带打包例外）、Deno（MIT）以及
+OpenVINO / sherpa-onnx 等。
+
+注意：BtbN 的 "lgpl" 构建不是纯 LGPL 构建。它经 chromaprint 静态链接了 FFTW 3.3.11（GPL-2.0-or-later），
+FFTW 在 `avformat-62.dll` 里；另外还静态链接了其他 LGPL 库和 MPL-2.0 库（SRT、libzmq）。因此在改用
+关闭 chromaprint 的自编精简 FFmpeg 之前，不公开分发 installer 或 standalone zip。构建脚本会拒绝带
+`--enable-gpl` / `--enable-nonfree` 或 libx264/libx265 的 FFmpeg，也会拒绝 `ffmpeg`、`ffprobe` 或同目录
+DLL 里含 FFTW（`fftw_` 符号或 `fftw-3` 版本字符串）的 FFmpeg，所以目前固定的构建会在这一步失败。
+
+换成合规的 FFmpeg 之后，公开分发 installer 或 standalone zip 前仍须随包提供这些组件的许可证原文，并在
+发布页附上 FFmpeg 及其静态链接库的对应源码（构建脚本会复制 `licenses/FFMPEG_SOURCE.txt`，写明源码链接和
+替换 DLL 的方法）。详见 `THIRD_PARTY_NOTICES.md`。

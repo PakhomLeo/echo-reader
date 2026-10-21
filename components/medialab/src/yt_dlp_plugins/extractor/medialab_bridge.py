@@ -34,7 +34,7 @@ TIMEOUT = 60.0
 @register_provider
 class MedialabBridgePTP(PoTokenProvider):
     PROVIDER_VERSION = "0.1.0"
-    BUG_REPORT_LOCATION = "https://github.com/local/medialab"
+    BUG_REPORT_LOCATION = "https://github.com/PakhomLeo/echo-reader/issues"
     PROVIDER_NAME = "medialab-bridge"
 
     _SUPPORTED_CONTEXTS = (PoTokenContext.PLAYER, PoTokenContext.GVS)

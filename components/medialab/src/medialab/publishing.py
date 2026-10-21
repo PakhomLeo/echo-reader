@@ -344,7 +344,7 @@ def _is_playable_copy(src: Path, ffprobe: dict | None) -> bool:
     return ext in COPY_AUDIO_EXTS
 
 
-# H.264 编码器按优先级选择。桌面程序束随附的是 FFmpeg LGPL 构建（不含 GPL 的 libx264），
+# H.264 编码器按优先级选择。mise 固定的 BtbN "lgpl" FFmpeg 构建不含 GPL 的 libx264，
 # 其中可用 libopenh264（BSD-2-Clause）；用户自己的 FFmpeg 若带 libx264 则优先用它。
 _H264_ENCODERS: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("libx264", ("-preset", "medium", "-crf", "23")),

@@ -77,25 +77,39 @@ service's terms.
 
 The Windows bundle additionally ships:
 
-- **FFmpeg / FFprobe** – an unmodified **LGPL-3.0-or-later** build from
-  [BtbN/FFmpeg-Builds](https://github.com/BtbN/FFmpeg-Builds), pinned in `mise.toml` by release
-  tag, asset name and SHA-256:
-  `ffmpeg-n8.1.2-34-g9b6c8969e0-win64-lgpl-shared-8.1.zip`
+- **FFmpeg / FFprobe** – *no Windows bundle or installer is published yet; see below.* The build
+  pinned in `mise.toml` is an unmodified build from
+  [BtbN/FFmpeg-Builds](https://github.com/BtbN/FFmpeg-Builds), fixed by release tag, asset name and
+  SHA-256: `ffmpeg-n8.1.2-34-g9b6c8969e0-win64-lgpl-shared-8.1.zip`
   (`sha256:c222a490dde4e7059f45495deef6bfb98dbcacc2b43df5b607546252037aa95c`, release
   [`autobuild-2026-07-31-14-10`](https://github.com/BtbN/FFmpeg-Builds/releases/tag/autobuild-2026-07-31-14-10)).
-  It is configured with `--enable-version3` and without `--enable-gpl` / `--enable-nonfree`, so it
-  contains no GPL-only components such as libx264 or libx265; H.264 is encoded with OpenH264
-  (BSD-2-Clause). The build script refuses any FFmpeg that reports `--enable-gpl`, `--enable-nonfree`
-  or a libx264/libx265 encoder.
+  It is configured with `--enable-version3` and without `--enable-gpl` / `--enable-nonfree`, and it
+  has no libx264 or libx265; H.264 is encoded with OpenH264 (BSD-2-Clause).
+  - **It is not a pure LGPL build.** BtbN builds chromaprint against FFTW 3.3.11
+    (`-DFFT_LIB=fftw3` in `scripts.d/50-chromaprint.sh`) and links it statically. FFTW is
+    GPL-2.0-or-later. In the `lgpl-shared` variant FFTW is inside `avformat-62.dll`, which contains
+    `fftw_*` symbols and the string `fftw-3.3.11`; the Linux `lgpl` build contains it as well. The
+    build also statically links LGPL libraries (LAME, twolame, soxr, libbluray, libgme, libssh,
+    openal-soft, libplacebo, fribidi, libiconv, aribb24, gmp, zvbi) and MPL-2.0 libraries (SRT,
+    libzmq).
+  - *Consequence*: Echo Reader does not publish a Windows installer or bundle with this build. The
+    bundle will only be published once it ships a trimmed FFmpeg that we build ourselves with
+    BtbN's scripts, with chromaprint disabled and only the encoders and components Echo Reader
+    uses, and with the license texts and corresponding source of every remaining statically linked
+    LGPL/MPL library (see the to-do list in [docs/HANDOFF.md](docs/HANDOFF.md)).
+  - *Build guard*: `scripts/build-package.ps1` refuses any FFmpeg that reports `--enable-gpl`,
+    `--enable-nonfree` or a libx264/libx265 encoder, that lacks libopenh264, or whose `ffmpeg`,
+    `ffprobe` or DLLs contain FFTW (`fftw_` symbols or an `fftw-3` version string). The build
+    pinned today is therefore rejected.
   - *License text*: FFmpeg's `LICENSE.txt` is copied to `licenses/FFMPEG_LICENSE.txt`.
   - *Corresponding source*: FFmpeg commit
     [`9b6c8969e0`](https://github.com/FFmpeg/FFmpeg/tree/9b6c8969e0) and the build scripts with every
     pinned library version at
     [BtbN/FFmpeg-Builds@autobuild-2026-07-31-14-10](https://github.com/BtbN/FFmpeg-Builds/tree/autobuild-2026-07-31-14-10);
-    releases that ship the bundle also attach the source archive. See
+    the GitHub release also attaches the FFmpeg source archive and the BtbN build scripts. See
     `licenses/FFMPEG_SOURCE.txt` in the bundle (`installer/licenses/FFMPEG_SOURCE.txt` here).
-  - *Replacing the libraries*: echo-reader does not link FFmpeg; it runs `ffmpeg.exe` / `ffprobe.exe`
-    as separate processes. The shared build ships the LGPL libraries as separate DLLs
+  - *Replacing the libraries*: echo-reader's MIT code does not link FFmpeg; it runs `ffmpeg.exe` /
+    `ffprobe.exe` as separate processes. The shared build ships the FFmpeg libraries as separate DLLs
     (`avcodec-62.dll`, `avformat-62.dll`, `avutil-60.dll`, …) in `tools\`; you may replace them, or
     the executables, with your own build of the same major version.
   - When you run from source, FFmpeg comes from your own installation (or `mise install`); any

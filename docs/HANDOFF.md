@@ -48,8 +48,14 @@ online/local ASR 均不绕过质量门禁。详细字段和边界只在[集成�
 
 ## 剩余风险与不得过度声明的结论
 
-- 源码已采用 MIT 许可证；公开分发 installer / standalone zip 仍需随包提供第三方许可证原文，并
-  在发布页附上包内 FFmpeg LGPL-3.0 构建的对应源码（见 `THIRD_PARTY_NOTICES.md`、`installer/licenses/FFMPEG_SOURCE.txt`）。
+- 源码已采用 MIT 许可证，只把 `ffmpeg` / `ffprobe` 当独立程序调用；公开分发 installer / standalone
+  zip 仍需随包提供第三方许可证原文，并在发布页附上包内 FFmpeg 及其静态链接库的对应源码（见
+  `THIRD_PARTY_NOTICES.md`、`installer/licenses/FFMPEG_SOURCE.txt`）。
+- 不得把目前固定的 BtbN "lgpl" FFmpeg 称为纯 LGPL 构建：它经 chromaprint 静态链接了 FFTW 3.3.11
+  （GPL-2.0-or-later，`avformat-62.dll` 内有 `fftw_*` 符号和 `fftw-3.3.11` 字符串），另静态链接了
+  LAME、twolame、soxr、libbluray、libgme、libssh、openal-soft、libplacebo、fribidi、libiconv、
+  aribb24、gmp、zvbi（LGPL）和 SRT、libzmq（MPL-2.0）。`build-package.ps1` 的 `Assert-LgplFfmpeg`
+  发现 FFTW 即失败；在完成下面的“FFmpeg 自编精简构建”待办之前不发布 Windows 安装包和程序束。
 - 安全 DNS pin 刻意不支持代理或环境代理；这是 fail-closed 功能边界，不是仍开放的绕过
   实现。需要代理的未来方案必须重新建立连接目标保证。
 - Edge renderer 有 HTTPS/host/resource 预算，但不等于 curl 路径的 transfer-scoped DNS pin；不得
@@ -58,6 +64,21 @@ online/local ASR 均不绕过质量门禁。详细字段和边界只在[集成�
   XHS、知乎/头条、YouTube/Bilibili 等真实样本，不宣称已用当前构建重新通过。
 - Windows 安装包在未使用有效代码签名证书完成真实签名/SmartScreen 验证前，不宣称商业分发
   安装体验已验收。
+
+## 待办：FFmpeg 自编精简构建（方案 a）
+
+Windows 安装包和程序束恢复发布前必须完成，完成前不发布：
+
+1. 用 BtbN/FFmpeg-Builds 的脚本自己编译 FFmpeg（以当前固定的 `autobuild-2026-07-31-14-10` 为基础），
+   关闭 chromaprint（去掉 `50-chromaprint.sh` / 不带 `--enable-chromaprint`），从而不再引入 FFTW。
+2. 只保留 Echo Reader 实际用到的编码器和组件：编码器 libopenh264、aac、libmp3lame、libopus、flac、
+   pcm_s16le（见 `medialab/audio.py`、`publishing.py`、`funasr_asr.py`），导入所需的解码器、
+   demuxer/muxer 和 `ffprobe`；其余外部库不启用，保持不带 `--enable-gpl` / `--enable-nonfree`。
+3. 对仍静态链接的 LGPL / MPL-2.0 库，逐个随包提供许可证原文，并在 GitHub Release 附上对应源码和
+   构建脚本；更新 `installer/licenses/FFMPEG_SOURCE.txt`、`THIRD_PARTY_NOTICES.md`、`mise.toml`
+   的固定资产和 SHA-256。
+4. 用 `scripts/build-package.ps1` 验证 `Assert-LgplFfmpeg`（含 FFTW 检查）通过，再按
+   [安装文档](installation.md#打包形式与许可) 在干净的 Windows 上验收。
 
 ## 当前验证状态
 

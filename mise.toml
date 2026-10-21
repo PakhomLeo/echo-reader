@@ -5,9 +5,11 @@ deno = "2.9.4"
 rust = "1.97.1"
 bun = "1.3.14"
 
-# FFmpeg: BtbN LGPL builds only (no GPL encoders such as libx264). Pinned release tag, asset and SHA-256
-# (from the release's checksums.sha256). Windows uses the *shared* build so the LGPL libraries are
+# FFmpeg: BtbN "lgpl" builds only (no GPL encoders such as libx264). Pinned release tag, asset and SHA-256
+# (from the release's checksums.sha256). Windows uses the *shared* build so the FFmpeg libraries are
 # separate DLLs that users can replace. Do not switch to a "-gpl" asset: see THIRD_PARTY_NOTICES.md.
+# Note: these "lgpl" builds are not pure LGPL; chromaprint links GPL FFTW statically, so they must not
+# be shipped in the Windows bundle (build-package.ps1 rejects them). See docs/HANDOFF.md for the plan.
 [tools."github:BtbN/FFmpeg-Builds"]
 version = "autobuild-2026-07-31-14-10"
 

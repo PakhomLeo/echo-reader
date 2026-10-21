@@ -3,15 +3,26 @@ FFmpeg in this package
 
 The files in tools\ named ffmpeg.exe, ffprobe.exe, avcodec-62.dll, avdevice-62.dll,
 avfilter-11.dll, avformat-62.dll, avutil-60.dll, swresample-6.dll and swscale-9.dll are an
-unmodified LGPL build of FFmpeg made by the BtbN/FFmpeg-Builds project:
+unmodified build of FFmpeg made by the BtbN/FFmpeg-Builds project (its "lgpl-shared" variant):
 
   Build:   ffmpeg-n8.1.2-34-g9b6c8969e0-win64-lgpl-shared-8.1.zip
   Release: https://github.com/BtbN/FFmpeg-Builds/releases/tag/autobuild-2026-07-31-14-10
   SHA-256: c222a490dde4e7059f45495deef6bfb98dbcacc2b43df5b607546252037aa95c
 
-License: GNU Lesser General Public License, version 3 or later (configured with
---enable-version3, without --enable-gpl or --enable-nonfree; no libx264/libx265).
-The full license text is in FFMPEG_LICENSE.txt.
+License: FFmpeg itself is under the GNU Lesser General Public License, version 3 or later
+(configured with --enable-version3, without --enable-gpl or --enable-nonfree; no
+libx264/libx265). The full license text is in FFMPEG_LICENSE.txt.
+
+This is NOT a pure LGPL build. BtbN builds chromaprint against FFTW 3.3.11
+(-DFFT_LIB=fftw3) and links both statically into avformat-62.dll. FFTW is under the GNU
+General Public License, version 2 or later. The build also statically links other LGPL
+libraries (LAME, twolame, soxr, libbluray, libgme, libssh, openal-soft, libplacebo,
+fribidi, libiconv, aribb24, gmp, zvbi) and MPL-2.0 libraries (SRT, libzmq).
+
+For this reason echo-reader does not publish a Windows package with this build. Packages
+will be published only with a trimmed FFmpeg that we build ourselves without chromaprint,
+and this file will then be updated to describe that build. echo-reader's own code is
+MIT-licensed and only runs ffmpeg.exe and ffprobe.exe as separate programs.
 
 Corresponding source
 --------------------
@@ -22,8 +33,8 @@ Corresponding source
   (OpenH264, LAME, Opus, dav1d, ...):
     https://github.com/BtbN/FFmpeg-Builds/tree/autobuild-2026-07-31-14-10
 
-The echo-reader project also attaches the FFmpeg source archive to each GitHub release
-that ships this package (https://github.com/PakhomLeo/echo-reader/releases):
+The echo-reader project also attaches the FFmpeg source archive and the BtbN build
+scripts to its GitHub releases (https://github.com/PakhomLeo/echo-reader/releases):
 
   ffmpeg-n8.1.2-34-g9b6c8969e0.tar.xz
       exact source of commit 9b6c8969e05b4f0b29f0f85cd501be6b3e582e6b (n8.1.2 plus 34

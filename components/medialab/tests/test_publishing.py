@@ -257,7 +257,7 @@ if __name__ == "__main__":
 
 
 class TestH264EncoderSelection(unittest.TestCase):
-    """桌面程序束随附 FFmpeg LGPL 构建（无 libx264），转码必须能退到 LGPL 可用的编码器。"""
+    """不带 libx264 的 FFmpeg 构建（如 BtbN "lgpl"），转码必须能退到非 GPL 的编码器。"""
 
     LGPL_ENCODERS = (
         "Encoders:\n"

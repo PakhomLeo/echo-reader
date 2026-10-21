@@ -65,9 +65,49 @@ function Assert-NoGplTtsDependency([string]$Root, [string]$Label) {
     }
 }
 
-# FFmpeg must be the BtbN LGPL build pinned in mise.toml (no --enable-gpl / --enable-nonfree,
-# no libx264/libx265). The Windows build is the shared variant so the LGPL libraries ship as
-# replaceable DLLs next to ffmpeg.exe.
+# Returns the files next to ffmpeg that contain FFTW (GPL-2.0-or-later) code, found by the
+# 'fftw_' symbol prefix or the 'fftw-3.x' version string. BtbN's "lgpl" builds link FFTW
+# statically through chromaprint (-DFFT_LIB=fftw3), so --enable-gpl alone does not catch it.
+# Scans the ffmpeg executable, ffprobe next to it and every DLL in the same folder, in chunks.
+function Find-FftwInFfmpeg([string]$FfmpegPath) {
+    $folder = [IO.Path]::GetDirectoryName([IO.Path]::GetFullPath($FfmpegPath))
+    $candidates = @(Get-Item -LiteralPath $FfmpegPath)
+    $candidates += @(Get-ChildItem -LiteralPath $folder -File | Where-Object {
+        $_.Name -imatch '^ffprobe(\.exe)?$' -or $_.Extension -ieq '.dll'
+    })
+    $markers = @('fftw_', 'fftw-3')
+    $latin1 = [Text.Encoding]::GetEncoding(28591)
+    $chunkSize = 4MB
+    $hits = @()
+    foreach ($file in ($candidates | Sort-Object FullName -Unique)) {
+        $found = @()
+        $tail = ''
+        $buffer = New-Object byte[] $chunkSize
+        $stream = [IO.File]::OpenRead($file.FullName)
+        try {
+            while (($read = $stream.Read($buffer, 0, $chunkSize)) -gt 0) {
+                # Keep the end of the previous chunk so a marker split across chunks is still found.
+                $text = $tail + $latin1.GetString($buffer, 0, $read)
+                foreach ($marker in $markers) {
+                    if ($found -notcontains $marker -and $text.IndexOf($marker, [StringComparison]::Ordinal) -ge 0) {
+                        $found += $marker
+                    }
+                }
+                if ($found.Count -eq $markers.Count) { break }
+                $tail = $text.Substring([Math]::Max(0, $text.Length - 8))
+            }
+        } finally {
+            $stream.Dispose()
+        }
+        if ($found.Count -gt 0) { $hits += "$($file.Name) ($($found -join ', '))" }
+    }
+    return $hits
+}
+
+# FFmpeg must be an LGPL build: no --enable-gpl / --enable-nonfree, no libx264/libx265 and no
+# FFTW. The BtbN "lgpl" build pinned in mise.toml fails the FFTW check (chromaprint); a custom
+# build without chromaprint is planned, see docs/HANDOFF.md. The Windows build is the shared
+# variant so the FFmpeg libraries ship as replaceable DLLs next to ffmpeg.exe.
 function Assert-LgplFfmpeg([string]$FfmpegPath) {
     $versionText = (& $FfmpegPath -hide_banner -version) -join "`n"
     if ($LASTEXITCODE -ne 0) { throw "ffmpeg -version failed for $FfmpegPath" }
@@ -77,6 +117,12 @@ function Assert-LgplFfmpeg([string]$FfmpegPath) {
     $encoders = (& $FfmpegPath -hide_banner -encoders) -join "`n"
     if ($encoders -match '\blibx26[45]\b') { throw 'Bundled FFmpeg exposes GPL-only H.264/H.265 encoders' }
     if ($encoders -notmatch '\blibopenh264\b') { throw 'Bundled FFmpeg lacks libopenh264, which playback transcoding needs' }
+    $fftwHits = @(Find-FftwInFfmpeg $FfmpegPath)
+    if ($fftwHits.Count -gt 0) {
+        throw ("Bundled FFmpeg contains FFTW, which is GPL-2.0-or-later, so it is not an LGPL build: " +
+            "$($fftwHits -join '; '). BtbN 'lgpl' builds link FFTW through chromaprint; use a custom " +
+            "build configured without chromaprint (--disable-chromaprint) before shipping the bundle.")
+    }
 }
 
 function Assert-NoCredentialResidue([string]$Root, [string]$Label) {
