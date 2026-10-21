@@ -9,6 +9,8 @@ pub struct Config {
     pub public_token: Option<String>,
     pub boot_id: Option<String>,
     pub host_pid: Option<u32>,
+    /// Full-text index file (`ECHO_SEARCH_INDEX`). `None` = per-library file in the user cache.
+    pub search_index: Option<PathBuf>,
 }
 
 impl Config {
@@ -74,6 +76,9 @@ impl Config {
                 .filter(|value| !value.is_empty()),
             boot_id.is_some() || host_pid.is_some(),
         )?;
+        let search_index = std::env::var_os("ECHO_SEARCH_INDEX")
+            .filter(|value| !value.is_empty())
+            .map(PathBuf::from);
         Ok(Self {
             library_root,
             web_root,
@@ -82,6 +87,7 @@ impl Config {
             public_token,
             boot_id,
             host_pid,
+            search_index,
         })
     }
 }

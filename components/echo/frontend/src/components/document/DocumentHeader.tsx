@@ -1,10 +1,13 @@
 import { ExternalLink, Pencil } from "lucide-react";
+import type { ReactNode } from "react";
 import type { ItemDetail } from "../../api/types";
 import "./DocumentPage.css";
 interface Props {
   detail: ItemDetail;
   editingArticle: boolean;
   onEditArticle: () => void;
+  /** Optional extra buttons (TTS / OCR) rendered next to "编辑文章". */
+  extraActions?: ReactNode;
 }
 const LABELS: Record<string, string> = {
   article: "文章",
@@ -26,6 +29,7 @@ export function DocumentHeader({
   detail,
   editingArticle,
   onEditArticle,
+  extraActions,
 }: Props) {
   const { source } = detail;
   return (
@@ -44,7 +48,8 @@ export function DocumentHeader({
       {(source.title ||
         source.published_at ||
         source.url ||
-        detail.article.available) && (
+        detail.article.available ||
+        extraActions) && (
         <div className="document-meta">
           {source.title && (
             <span className="document-folder">{detail.folder_name}</span>
@@ -67,6 +72,7 @@ export function DocumentHeader({
                 编辑文章
               </button>
             )}
+            {extraActions}
           </span>
         </div>
       )}

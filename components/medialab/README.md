@@ -71,6 +71,15 @@ JS 默认策略是微信 `always`，知乎和头条 `on_miss`，其他平台 `of
 
 以上四项移植自独立项目 UP（Unified Processor），已改写为 MediaLab 的适配器/配置契约。
 
+可选增强（缺依赖时 `probe_*()` 报告原因，其他功能不受影响）：
+
+- `medialab.tts`：Kokoro 离线朗读（`medialab[tts]`：kokoro-onnx 0.5、onnxruntime、numpy）。
+  模型 `kokoro-v1.0.onnx` / `voices-v1.0.bin` 不在仓库中，用 `scripts/download_kokoro_models.py`
+  下载；`ECHO_TTS_MODELS_PATH` 或 `[tts] model_dir` 指定目录。中文占比高时自动用 `cmn` + `zf_xiaoxiao`。
+- `medialab.ocr`：图片文字识别。本地 RapidOCR（`medialab[ocr]`，PP-OCR ONNX 模型随 wheel 提供），
+  或 PaddleOCR-VL 云端任务 API（`[ocr] engine = "paddleocr_api"`，需 `allow_cloud = true` 与
+  `secrets.toml [ocr].token`，会上传图片）。
+
 ## 发布与默认目录
 
 一个原始 URL 对应一个由“检测平台 + 脱敏后的原始 URL”派生的稳定 manifest ID。默认发布根是

@@ -890,7 +890,7 @@ async fn internal_library_switch_requires_token_and_changes_root() {
 async fn import_routes_proxy_exact_path_query_body_and_status() {
     use axum::{
         Json, Router,
-        extract::Query,
+        extract::{Path, Query},
         http::StatusCode,
         routing::{get, post},
     };
@@ -928,6 +928,28 @@ async fn import_routes_proxy_exact_path_query_body_and_status() {
                 get(|Query(query): Query<HashMap<String, String>>| async move {
                     Json(json!({"url": query.get("url"), "platforms": []}))
                 }),
+            )
+            .route(
+                "/api/v1/items/{id}/tts",
+                post(|Path(id): Path<String>| async move {
+                    (
+                        StatusCode::ACCEPTED,
+                        Json(json!({"kind": "tts", "item": id})),
+                    )
+                }),
+            )
+            .route(
+                "/api/v1/items/{id}/ocr",
+                post(|Path(id): Path<String>| async move {
+                    (
+                        StatusCode::ACCEPTED,
+                        Json(json!({"kind": "ocr", "item": id})),
+                    )
+                }),
+            )
+            .route(
+                "/api/v1/enrichment-jobs/{id}",
+                get(|Path(id): Path<String>| async move { Json(json!({"job": id})) }),
             );
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let upstream_url = format!("http://{}", listener.local_addr().unwrap());
@@ -975,6 +997,28 @@ async fn import_routes_proxy_exact_path_query_body_and_status() {
         health,
         json!({"url": "https://weibo.com/1", "platforms": []})
     );
+    for kind in ["tts", "ocr"] {
+        let accepted = client
+            .post(format!("{base}/api/v1/items/id-x/{kind}"))
+            .json(&json!({}))
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(accepted.status(), StatusCode::ACCEPTED);
+        assert_eq!(
+            accepted.json::<serde_json::Value>().await.unwrap(),
+            json!({"kind": kind, "item": "id-x"})
+        );
+    }
+    let job: serde_json::Value = client
+        .get(format!("{base}/api/v1/enrichment-jobs/j1"))
+        .send()
+        .await
+        .unwrap()
+        .json()
+        .await
+        .unwrap();
+    assert_eq!(job, json!({"job": "j1"}));
     assert_eq!(
         client
             .get(format!("{base}/api/v1/not-an-import-route"))

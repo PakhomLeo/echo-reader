@@ -90,7 +90,7 @@ def test_reserved_socket_and_child_environment_are_loopback_and_explicit(tmp_pat
     listener, url = _reserve_loopback_socket()
     try:
         assert _is_loopback_url(url)
-        paths = type("Paths", (), {"library_root": tmp_path / "library"})()
+        paths = type("Paths", (), {"library_root": tmp_path / "library", "cache_root": tmp_path / "cache"})()
         env = _child_environment(
             paths, url, "internal-secret", "public-secret-token-at-least-32-chars",
             "boot-id", tmp_path / "ready.json", tmp_path / "web", tmp_path / "tools",
@@ -102,6 +102,7 @@ def test_reserved_socket_and_child_environment_are_loopback_and_explicit(tmp_pat
         assert env["ECHO_BOOT_ID"] == "boot-id"
         assert env["ECHO_HOST_PID"] == str(os.getpid())
         assert env["LIBRARY_ROOT"] == str(tmp_path / "library")
+        assert env["ECHO_CACHE_DIR"] == str(tmp_path / "cache")
     finally:
         listener.close()
 

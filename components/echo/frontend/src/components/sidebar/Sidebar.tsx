@@ -6,6 +6,7 @@ import {
   ListFilter,
   Layers3,
   Plus,
+  Search,
   Video,
 } from "lucide-react";
 import { FolderPickerModal } from "./FolderPickerModal";
@@ -26,6 +27,9 @@ interface SidebarProps {
   onFilter: (filter: LibraryFilter) => void;
   onAdd: () => void;
   onOpenJobs: () => void;
+  /** Optional so older callers keep working; the entry is hidden without it. */
+  searchSelected?: boolean;
+  onOpenSearch?: () => void;
   onRefresh: () => void;
   onSwitchRoot: (
     path: string,
@@ -50,6 +54,8 @@ export function Sidebar({
   onFilter,
   onAdd,
   onOpenJobs,
+  searchSelected = false,
+  onOpenSearch,
   onRefresh,
   onSwitchRoot,
   onExit,
@@ -101,6 +107,19 @@ export function Sidebar({
           </>
         )}
       </button>
+      {onOpenSearch && (
+        <button
+          className={`workspace-section${searchSelected ? " is-active" : ""}`}
+          type="button"
+          onClick={onOpenSearch}
+          aria-label="全文搜索"
+          aria-current={searchSelected ? "page" : undefined}
+          title={collapsed ? "全文搜索" : undefined}
+        >
+          <Search size={16} />
+          {!collapsed && <span>全文搜索</span>}
+        </button>
+      )}
       <WorkspaceBottom
         collapsed={collapsed}
         refreshing={refreshing}

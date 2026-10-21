@@ -1,0 +1,21 @@
+.search-page { height: 100%; overflow: auto; padding: 36px clamp(20px, 5vw, 64px); background: var(--color-reading-bg); }
+.search-header h1 { margin: 2px 0 4px; font-size: 30px; }
+.search-header p { margin: 0; color: var(--color-text-tertiary); }
+.search-form { display: flex; align-items: center; gap: 8px; margin: 24px 0 10px; padding: 6px 6px 6px 12px; border: 1px solid var(--color-border-strong); border-radius: 10px; background: var(--color-surface); color: var(--color-text-tertiary); max-width: var(--content-width); }
+.search-form input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--color-text-primary); font-size: 15px; padding: 6px 0; }
+.search-form button { border: 0; border-radius: 7px; background: var(--color-accent); color: white; padding: 8px 14px; font-size: 13px; }
+.search-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; max-width: var(--content-width); color: var(--color-text-secondary); font-size: 13px; }
+.search-toolbar label { display: inline-flex; align-items: center; gap: 6px; }
+.search-toolbar button { margin-left: auto; display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--color-border-strong); border-radius: 7px; background: var(--color-surface); color: var(--color-text-primary); padding: 6px 10px; font-size: 12px; }
+.search-status[data-up-to-date="false"] { color: #8a5a20; }
+.search-error { color: var(--color-danger); }
+.search-empty { color: var(--color-text-tertiary); }
+.search-results { list-style: none; margin: 22px 0 0; padding: 0; max-width: var(--content-width); border-top: 1px solid var(--color-border); }
+.search-result { padding: 16px 0; border-bottom: 1px solid var(--color-border); }
+.search-result-title { color: var(--color-text-primary); font-weight: 650; text-decoration: none; }
+.search-result-title:hover { color: var(--color-accent); }
+.search-result ul { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; }
+.search-result li li { display: grid; grid-template-columns: 7.5em minmax(0, 1fr); gap: 10px; font-size: 13px; color: var(--color-text-secondary); }
+.search-kind { color: var(--color-text-tertiary); white-space: nowrap; }
+.search-snippet { overflow-wrap: anywhere; }
+@media (prefers-color-scheme: dark) { .search-status[data-up-to-date="false"] { color: #d9a35b; } }

@@ -49,7 +49,7 @@ export function AppShell() {
   }, []);
   return (
     <div
-      className={`app-shell${location.pathname.startsWith("/items/") ? " shell-reading" : ""}${location.pathname === "/imports" ? " shell-tasks" : ""}`}
+      className={`app-shell${location.pathname.startsWith("/items/") ? " shell-reading" : ""}${location.pathname === "/imports" || location.pathname === "/search" ? " shell-tasks" : ""}`}
     >
       <Sidebar
         filter={filter}
@@ -61,12 +61,14 @@ export function AppShell() {
         onFilter={(next) => { setFilter(next); navigate("/"); }}
         onAdd={() => setImportOpen(true)}
         onOpenJobs={() => navigate("/imports")}
+        searchSelected={location.pathname === "/search"}
+        onOpenSearch={() => navigate("/search")}
         onRefresh={() => void refresh()}
         onSwitchRoot={handleSwitchRoot}
         installMode={installMode}
         onExit={shutdownApp}
       />
-      {location.pathname !== "/imports" && <ContentList
+      {location.pathname !== "/imports" && location.pathname !== "/search" && <ContentList
         items={filtered}
         loading={loading}
         error={error}

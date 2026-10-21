@@ -29,6 +29,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from .app_config import AppPaths
+from .enrichment import EnrichmentService
 from .import_store import ImportStore, TERMINAL, now, sanitize_text
 from .integration import ImportCoordinator, ImportFailed
 
@@ -81,6 +82,12 @@ class BatchRequest(SharedOptions):
                 raise ValueError("URLs must be unique")
             seen.add(normalized)
         return values
+
+
+class TtsRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    voice: str | None = Field(default=None, pattern=r"^[a-z]{2}_[a-z0-9]{1,32}$")
+    speed: float | None = Field(default=None, ge=0.5, le=2.0)
 
 
 class LibrarySwitchRequest(BaseModel):
@@ -567,6 +574,7 @@ def create_app(*, library_root: str | Path | None = None,
     if paths.install_mode and not service_internal_token:
         raise ValueError("Installed import service requires an internal token")
     imports = ImportService(paths)
+    enrichment = EnrichmentService(imports)
     durations: deque[dict[str, Any]] = deque(maxlen=200)
     logger = logging.getLogger(f"echo_reader.imports.{id(imports)}")
     logger.setLevel(logging.INFO); logger.propagate = False
@@ -600,6 +608,7 @@ def create_app(*, library_root: str | Path | None = None,
             yield
         finally:
             try:
+                await enrichment.close()
                 await imports.close()
             finally:
                 if started:
@@ -608,6 +617,7 @@ def create_app(*, library_root: str | Path | None = None,
 
     app = FastAPI(title="Echo Reader Import Service", version="1", lifespan=lifespan)
     app.state.imports = imports
+    app.state.enrichment = enrichment
     app.state.credential_broker = None
 
     @app.middleware("http")
@@ -691,7 +701,25 @@ def create_app(*, library_root: str | Path | None = None,
         recommended = "online" if backends["online"]["available"] else "local" if backends["local"]["available"] else None
         return {"status": "ready", "content_root": str(imports.content_root), "batch_max_urls": 50,
                 "recommended_backend": recommended, "backends": backends,
-                "indexing": dict(imports.indexing)}
+                "indexing": dict(imports.indexing),
+                "features": await asyncio.to_thread(enrichment.features)}
+
+    @app.get("/api/v1/features")
+    async def features():
+        return await asyncio.to_thread(enrichment.features)
+
+    @app.post("/api/v1/items/{item_id}/tts", status_code=202)
+    async def create_tts(item_id: str, request: TtsRequest | None = None):
+        options = request.model_dump(exclude_none=True) if request else {}
+        return await enrichment.start("tts", item_id, options)
+
+    @app.post("/api/v1/items/{item_id}/ocr", status_code=202)
+    async def create_ocr(item_id: str):
+        return await enrichment.start("ocr", item_id, {})
+
+    @app.get("/api/v1/enrichment-jobs/{job_id}")
+    async def get_enrichment_job(job_id: str):
+        return enrichment.get_job(job_id)
 
     @app.post("/api/v1/import-batches", status_code=202)
     async def create_batch(request: BatchRequest): return await imports.create_batch(request)

@@ -20,6 +20,43 @@ async fn main() {
     tracing::info!("资料库根目录: {}", config.library_root.display());
 
     let state = echo_backend::app_state::AppState::new(config);
+
+    // Maintenance commands: `echo-backend --rebuild-search-index` deletes the full-text
+    // index and rebuilds it from the library; `--search-index-status` reports staleness.
+    let args: Vec<String> = std::env::args().skip(1).collect();
+    if let Some(command) = args.first().map(String::as_str) {
+        let output = match command {
+            "--rebuild-search-index" => state
+                .rebuild_search()
+                .await
+                .map(|(report, status)| serde_json::json!({ "rebuilt": report, "status": status })),
+            "--search-index-status" => state
+                .search_status()
+                .await
+                .map(|status| serde_json::json!(status)),
+            other => {
+                eprintln!("未知参数 {other}。可用: --rebuild-search-index, --search-index-status");
+                std::process::exit(2);
+            }
+        };
+        match output {
+            Ok(value) => {
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&value).unwrap_or_default()
+                );
+                return;
+            }
+            Err(error) => {
+                eprintln!("{}", error.message);
+                std::process::exit(1);
+            }
+        }
+    }
+    {
+        let state = state.clone();
+        tokio::spawn(async move { state.sync_search_logged().await });
+    }
     let shutdown = state.shutdown.clone();
     let boot_id = state.config.boot_id.clone();
     let parent_watch = state

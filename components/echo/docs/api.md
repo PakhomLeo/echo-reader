@@ -262,6 +262,51 @@ manifest 中 `role: primary` 的条目不会在此重复返回。`source.descrip
 图片与附件。路径按原始 URI 解码后校验，任何包含 `../`、绝对路径、盘符、符号链接逃逸、URL 编码穿越的请求被拒绝（403/404），无法访问资料库外文件。响应带 `nosniff`、sandbox CSP
 和 `Referrer-Policy: no-referrer`，直接导航活动内容不会继承应用页面权限。
 
+### GET /api/v1/search?q=&mode=&limit=
+
+全文检索（SQLite FTS5）。`mode=question` 会先去掉“请问 / 是什么 / what is”等问句成分；
+`limit` 默认 50，最大 200；`q` 最长 500 字符。用户输入的每个词都被加引号，不能注入 FTS5 语法。
+中文按 1–3 字 n-gram 建索引，英文按词。
+
+```json
+{
+  "query": "播放器", "effective_query": "播放器",
+  "hits": [
+    { "item_id": "id-b", "folder_name": "b", "title": "第二篇", "kind": "article",
+      "locator": "1", "start_ms": null, "snippet": "讲的是播放器和字幕…", "score": -1.47 }
+  ]
+}
+```
+
+`kind` 为 `title`、`article`（`locator` 是段落序号）、`transcript`（`locator` 是 segment id，
+带 `start_ms`）或 `ocr`（`locator` 是图片相对路径）。
+
+索引只是缓存：资料库文件是唯一数据来源。每次查询前按文件大小和修改时间做一次廉价同步，
+变化的条目再用内容哈希确认并重建；通过 API 保存文章、转录或删除图片引用时立即更新；
+新增和删除的条目在资料库重新扫描（`POST /api/v1/library/rescan`、切换资料库、导入完成）后同步。
+
+### GET /api/v1/search/status
+
+只读检查索引是否过期，不修改索引：
+
+```json
+{ "index_path": "…/search/0123abcd.sqlite", "schema_version": "1",
+  "indexed_items": 2, "library_items": 2, "chunks": 9,
+  "stale_items": [], "missing_items": [], "orphan_items": [], "up_to_date": true }
+```
+
+### POST /api/v1/search/rebuild
+
+删除索引文件后从资料库完整重建，返回 `{ "rebuilt": {added, updated, removed, unchanged}, "status": {…} }`。
+命令行等价：`echo-backend --rebuild-search-index`（`--search-index-status` 只读查看）。
+
+索引位置：`ECHO_SEARCH_INDEX` 指定文件；否则为 `$ECHO_CACHE_DIR`（未设置时为系统用户缓存目录）
+下的 `echo-reader/search/<资料库路径哈希>.sqlite`。索引从不写进资料库目录。损坏的索引会被丢弃重建。
+
+### GET /api/v1/items/:id/ocr
+
+返回条目的 `ocr.json`（见 file-format.md）；没有时 404。
+
 ### 安装版导入代理
 
 Rust 同源网关只把下列精确路由代理给私有 Python 服务：
@@ -273,6 +318,8 @@ Rust 同源网关只把下列精确路由代理给私有 Python 服务：
 - `POST /api/v1/import-jobs/{id}/cancel`、`retry`、`reindex`
 - `GET /api/v1/import-diagnostics`
 - `GET /api/v1/credential-health`（浏览器会话 Cookie 离线健康检查，只返回名称与过期时间，不返回值）
+- `GET /api/v1/features`（可选功能 TTS / OCR 是否可用）
+- `POST /api/v1/items/{id}/tts`、`POST /api/v1/items/{id}/ocr`、`GET /api/v1/enrichment-jobs/{id}`
 
 代理保留 method、精确 path/query、body、`Content-Type` 和上游 status/Content-Type；不是任意路径
 反向代理。请求 body 上限 1 MiB，响应 body 上限 8 MiB。除了需执行完整本地扫描的

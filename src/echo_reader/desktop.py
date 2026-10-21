@@ -340,6 +340,10 @@ def _child_environment(paths: AppPaths, import_url: str, internal_token: str,
         "ECHO_READY_FILE": str(ready_file),
         "ECHO_WEB_ROOT": str(web_root),
     })
+    cache_root = getattr(paths, "cache_root", None)
+    if cache_root is not None:
+        # The full-text index is a per-library cache file below the app cache.
+        env["ECHO_CACHE_DIR"] = str(cache_root)
     if tools_root.is_dir():
         env["PATH"] = f"{tools_root}{os.pathsep}{env.get('PATH', '')}"
     return env

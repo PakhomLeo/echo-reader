@@ -21,6 +21,7 @@ chrono = { version = "0.4.45", features = ["clock"] }
 percent-encoding = "2.3.2"
 reqwest = { version = "0.13.4", default-features = false }
 socket2 = "0.6.5"
+rusqlite = { version = "0.37", features = ["bundled"] }
 
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.61.2", features = ["Win32_Foundation", "Win32_Networking_WinSock", "Win32_System_Threading"] }

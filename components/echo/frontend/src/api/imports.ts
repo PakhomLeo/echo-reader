@@ -26,6 +26,8 @@ export interface ImportCapabilities {
   recommended_backend: AsrBackend | null;
   backends: Record<AsrBackend, ImportBackendCapability>;
   indexing: { available: boolean; reason: string | null };
+  /** Optional TTS / OCR features (absent on older import services). */
+  features?: import("./enrichment").Features;
 }
 
 export interface CreateImportBatchRequest {

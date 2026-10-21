@@ -5,4 +5,5 @@ pub mod library;
 pub mod markdown;
 pub mod models;
 pub mod routes;
+pub mod search;
 pub mod storage;

@@ -6,6 +6,13 @@ use tokio::sync::{Mutex, RwLock};
 use crate::config::Config;
 use crate::error::ApiError;
 use crate::library::index::ItemIndex;
+use crate::search::{self, DocSource, IndexStatus, SearchIndex, SearchResponse, SyncReport};
+
+/// The full-text index is a cache: `index` is `None` until first use or after an error.
+pub struct SearchSlot {
+    pub path: PathBuf,
+    pub index: Option<SearchIndex>,
+}
 
 #[derive(Clone)]
 pub struct AppState {
@@ -15,6 +22,7 @@ pub struct AppState {
     pub index: Arc<RwLock<ItemIndex>>,
     pub import_client: reqwest::Client,
     pub shutdown: Arc<tokio::sync::Notify>,
+    pub search: Arc<std::sync::Mutex<SearchSlot>>,
     scan_lock: Arc<Mutex<()>>,
 }
 
@@ -22,6 +30,10 @@ impl AppState {
     pub fn new(config: Config) -> Self {
         let root = config.library_root.clone();
         let index = ItemIndex::scan(&root);
+        let search_path = config
+            .search_index
+            .clone()
+            .unwrap_or_else(|| search::default_index_path(&root));
         Self {
             config: Arc::new(config),
             library_root: Arc::new(RwLock::new(root)),
@@ -32,6 +44,10 @@ impl AppState {
                 .build()
                 .expect("构造 import HTTP client 失败"),
             shutdown: Arc::new(tokio::sync::Notify::new()),
+            search: Arc::new(std::sync::Mutex::new(SearchSlot {
+                path: search_path,
+                index: None,
+            })),
             scan_lock: Arc::new(Mutex::new(())),
         }
     }
@@ -44,6 +60,8 @@ impl AppState {
             .map_err(|error| ApiError::internal(format!("资料库扫描任务失败: {error}")))?;
         let (count, invalid) = (fresh.items().count(), fresh.problems().len());
         *self.index.write().await = fresh;
+        drop(_scan_guard);
+        self.sync_search_logged().await;
         Ok((count, invalid))
     }
 
@@ -58,9 +76,142 @@ impl AppState {
             .await
             .map_err(|error| ApiError::internal(format!("资料库扫描任务失败: {error}")))?;
         let (count, invalid) = (fresh.items().count(), fresh.problems().len());
+        if self.config.search_index.is_none() {
+            let path = search::default_index_path(&root);
+            let mut slot = self.search.lock().unwrap_or_else(|e| e.into_inner());
+            if slot.path != path {
+                slot.path = path;
+                slot.index = None;
+            }
+        }
         *self.library_root.write().await = root;
         *self.index.write().await = fresh;
+        drop(_scan_guard);
+        self.sync_search_logged().await;
         Ok((count, invalid))
+    }
+
+    async fn search_sources(&self) -> Vec<DocSource> {
+        self.index
+            .read()
+            .await
+            .items()
+            .map(DocSource::from_item)
+            .collect()
+    }
+
+    /// Run `f` against the open index on a blocking thread, opening it on first use.
+    async fn with_search<T: Send + 'static>(
+        &self,
+        f: impl FnOnce(&mut SlotAccess<'_>) -> Result<T, String> + Send + 'static,
+    ) -> Result<T, ApiError> {
+        let slot = self.search.clone();
+        tokio::task::spawn_blocking(move || {
+            let mut guard = slot.lock().unwrap_or_else(|e| e.into_inner());
+            let mut access = SlotAccess { slot: &mut guard };
+            let result = f(&mut access);
+            if result.is_err() {
+                // Drop the connection so the next call reopens (or rebuilds) it.
+                guard.index = None;
+            }
+            result
+        })
+        .await
+        .map_err(|error| ApiError::internal(format!("搜索索引任务失败: {error}")))?
+        .map_err(|error| {
+            ApiError::new(
+                axum::http::StatusCode::SERVICE_UNAVAILABLE,
+                "SEARCH_UNAVAILABLE",
+                format!("搜索索引不可用: {error}"),
+            )
+        })
+    }
+
+    /// Bring the index in line with the library (cheap when nothing changed).
+    pub async fn sync_search(&self) -> Result<SyncReport, ApiError> {
+        let sources = self.search_sources().await;
+        self.with_search(move |access| access.index()?.sync(&sources).map_err(|e| e.to_string()))
+            .await
+    }
+
+    pub async fn sync_search_logged(&self) {
+        if let Err(error) = self.sync_search().await {
+            tracing::warn!("搜索索引同步失败: {}", error.message);
+        }
+    }
+
+    /// Re-index one item right after it was edited through the API.
+    pub async fn reindex_search_item(&self, id: &str) {
+        let source = self.index.read().await.get(id).map(DocSource::from_item);
+        let Some(source) = source else { return };
+        let result = self
+            .with_search(move |access| {
+                access
+                    .index()?
+                    .reindex_one(&source)
+                    .map_err(|e| e.to_string())
+            })
+            .await;
+        if let Err(error) = result {
+            tracing::warn!("搜索索引更新失败: {}", error.message);
+        }
+    }
+
+    pub async fn search(
+        &self,
+        query: String,
+        question: bool,
+        limit: usize,
+    ) -> Result<SearchResponse, ApiError> {
+        let sources = self.search_sources().await;
+        self.with_search(move |access| {
+            let index = access.index()?;
+            index.sync(&sources).map_err(|e| e.to_string())?;
+            index
+                .search(&query, question, limit)
+                .map_err(|e| e.to_string())
+        })
+        .await
+    }
+
+    pub async fn search_status(&self) -> Result<IndexStatus, ApiError> {
+        let sources = self.search_sources().await;
+        self.with_search(move |access| access.index()?.status(&sources).map_err(|e| e.to_string()))
+            .await
+    }
+
+    /// Delete the index file and rebuild it from the library folders.
+    pub async fn rebuild_search(&self) -> Result<(SyncReport, IndexStatus), ApiError> {
+        let sources = self.search_sources().await;
+        self.with_search(move |access| {
+            access.slot.index = None;
+            let (index, report) =
+                search::rebuild(&access.slot.path, &sources).map_err(|e| e.to_string())?;
+            let status = index.status(&sources).map_err(|e| e.to_string())?;
+            access.slot.index = Some(index);
+            Ok((report, status))
+        })
+        .await
+    }
+}
+
+pub struct SlotAccess<'a> {
+    pub slot: &'a mut SearchSlot,
+}
+
+impl SlotAccess<'_> {
+    pub fn index(&mut self) -> Result<&mut SearchIndex, String> {
+        if self.slot.index.is_none() {
+            let opened = match SearchIndex::open(&self.slot.path) {
+                Ok(index) => index,
+                // A corrupt cache is never fatal: throw it away and start over.
+                Err(_) => search::rebuild(&self.slot.path, &[])
+                    .map(|(index, _)| index)
+                    .map_err(|e| e.to_string())?,
+            };
+            self.slot.index = Some(opened);
+        }
+        Ok(self.slot.index.as_mut().expect("index just opened"))
     }
 }
 
@@ -82,6 +233,7 @@ mod tests {
             public_token: None,
             boot_id: Some("test-boot".to_owned()),
             host_pid: None,
+            search_index: None,
         });
 
         let guard = state.scan_lock.lock().await;

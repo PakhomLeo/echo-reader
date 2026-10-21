@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use std::path::Path;
 
 use axum::Router;
@@ -20,6 +22,7 @@ pub async fn spawn_server_with_import(
         public_token: None,
         boot_id: Some("test-boot".to_owned()),
         host_pid: None,
+        search_index: Some(root.join(".echo-test-index").join("search.sqlite")),
     };
     let state = AppState::new(config);
     let app: Router = Router::new()
@@ -71,6 +74,7 @@ pub async fn spawn_server_with_public_session_and_internal(
         public_token: Some(public_token.to_owned()),
         boot_id: Some("test-boot".to_owned()),
         host_pid: None,
+        search_index: Some(root.join(".echo-test-index").join("search.sqlite")),
     };
     let state = AppState::new(config);
     let app: Router = Router::new()

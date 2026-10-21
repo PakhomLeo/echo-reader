@@ -163,3 +163,29 @@ shrink_threshold = 2
 speaker_label = "说话人"
 # 英文内容自动生成中文版文章：转写文本汉字占比低于该阈值视为英文（0=关闭）
 zh_threshold = 0.2
+
+[tts]
+# 可选：Kokoro 离线朗读（extra: tts）。未安装依赖或未下载模型时功能自动关闭，不影响其他功能。
+# 模型文件 kokoro-v1.0.onnx / voices-v1.0.bin 不随仓库分发，用
+# `uv run python scripts/download_kokoro_models.py` 下载；环境变量 ECHO_TTS_MODELS_PATH 优先。
+# model_dir 留空时，Echo Reader 导入服务使用 <cache_root>/models/kokoro。
+enabled = true
+model_dir = ""
+voice = "af_heart"
+voice_zh = "zf_xiaoxiao"
+speed = 1.0
+
+[ocr]
+# 可选：文章图片文字识别，结果写入条目目录下的 ocr.json 并进入全文检索。
+# engine:
+#   "auto"           默认；已安装 rapidocr-onnxruntime（extra: ocr）时用本地引擎，
+#                    否则在 allow_cloud = true 且配置了 endpoint/token 时用 PaddleOCR API
+#   "rapidocr"       只用本地引擎
+#   "paddleocr_api"  PaddleOCR-VL 云端任务 API（会上传图片，需 allow_cloud = true，
+#                    token 写在 secrets.toml [ocr].token）
+enabled = true
+engine = "auto"
+allow_cloud = false
+endpoint = "https://paddleocr.aistudio-app.com/api/v2/ocr/jobs"
+model = "PaddleOCR-VL-1.6"
+max_poll_attempts = 60

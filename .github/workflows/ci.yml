@@ -30,6 +30,21 @@ jobs:
         # Optional extras (local-asr, funasr) are not installed; their tests use stand-ins.
         run: uv run pytest -q tests components/medialab/tests
 
+  python-optional:
+    name: Python (optional TTS / OCR extras)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v7
+        with:
+          python-version: "3.12"
+          enable-cache: true
+      - name: Install with extras
+        run: uv sync --locked --extra tts --extra ocr
+      - name: Test
+        # Model weights are not downloaded in CI; tests use stand-ins for synthesis.
+        run: uv run pytest -q tests/test_enrichment.py components/medialab/tests/test_tts.py components/medialab/tests/test_ocr.py
+
   rust:
     name: Rust (Echo API)
     runs-on: ubuntu-latest

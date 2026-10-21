@@ -119,6 +119,9 @@ pub async fn delete_image_reference(
         std::fs::rename(&source, &trash_target).map_err(ApiError::from)?;
     }
 
+    drop(index);
+    state.reindex_search_item(&id).await;
+
     Ok(Json(json!({
         "article": {
             "markdown": updated,

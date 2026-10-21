@@ -141,3 +141,38 @@ Markdown 生成规则：块之间空行分隔；图片前后各保留一个空�
 - `text` 不得为 null
 
 通过 API 只允许修改 `speaker` 和 `text`，不允许修改 `start_ms` / `end_ms` / `id`。
+
+## 可选生成文件
+
+以下文件由可选功能生成，缺失时一切照常。
+
+### ocr.json
+
+图片文字识别结果，由导入服务 `POST /api/v1/items/{id}/ocr` 写入条目根目录，并进入全文检索：
+
+```json
+{
+  "schema_version": 1,
+  "engine": "rapidocr",
+  "created_at": "2026-10-21T09:49:37+00:00",
+  "images": [
+    { "path": "images/0001.webp", "text": "识别出的文字", "confidence": 0.99 },
+    { "path": "images/0002.webp", "text": "", "error": "单张失败的原因" }
+  ]
+}
+```
+
+### 朗读音频
+
+`POST /api/v1/items/{id}/tts` 把文章合成为 `media/tts-article.wav`（单声道 16-bit PCM），并在
+`manifest.json` 的 `media_items` 中写入（或替换）一项：
+
+```json
+{ "id": "tts-article", "role": "attachment", "type": "audio",
+  "original_path": "media/tts-article.wav", "playback_path": "media/tts-article.wav",
+  "mime_type": "audio/wav", "title": "文章朗读（Kokoro）" }
+```
+
+### 全文索引
+
+全文索引不属于资料库格式：它保存在资料库之外的缓存目录，可以随时删除并从上述文件重建。

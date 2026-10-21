@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { saveArticle } from "../../api/items";
 import { useDocument } from "../../hooks/useDocument";
+import { useFeatures } from "../../hooks/useFeatures";
 import { useMediaController } from "../../hooks/useMedia";
 import { useTranscript } from "../../hooks/useTranscript";
 import { ArticleView } from "../markdown/ArticleView";
@@ -17,6 +18,8 @@ import { TranscriptView } from "../transcript/TranscriptView";
 import { DocumentEmptyState } from "./DocumentEmptyState";
 import { DocumentErrorState } from "./DocumentErrorState";
 import { DocumentHeader } from "./DocumentHeader";
+import { EnrichmentActions } from "./EnrichmentActions";
+import { OcrPanel } from "./OcrPanel";
 import "./DocumentPage.css";
 
 interface ArticleOverride {
@@ -27,7 +30,9 @@ interface ArticleOverride {
 export function DocumentPage() {
   const { itemId } = useParams<{ itemId: string }>();
   const navigate = useNavigate();
-  const state = useDocument(itemId);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const state = useDocument(itemId, refreshKey);
+  const features = useFeatures();
   const { controller, mediaProps } = useMediaController();
   const [mode, setMode] = useState<ContentMode>("article");
   const [follow, setFollow] = useState(false);
@@ -150,6 +155,15 @@ export function DocumentPage() {
             detail={detail}
             editingArticle={editingArticle}
             onEditArticle={() => setEditingArticle(true)}
+            extraActions={
+              <EnrichmentActions
+                itemId={detail.id}
+                features={features}
+                hasArticle={detail.article.available}
+                hasImages={/!\[[^\]]*\]\([^)]+\)/.test(effectiveArticle?.markdown ?? "")}
+                onCompleted={() => setRefreshKey((value) => value + 1)}
+              />
+            }
           />
           {detail.media && (
             <StickyMediaCard
@@ -212,6 +226,9 @@ export function DocumentPage() {
               <DocumentEmptyState message="该内容暂无转录" />
             )}
           </div>
+          {effectiveMode === "article" && !editingArticle && (
+            <OcrPanel itemId={detail.id} version={refreshKey} />
+          )}
         </article>
         {detail.media?.type === "audio" && (
           <MiniPlayer controller={controller} />

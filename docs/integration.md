@@ -80,6 +80,23 @@ Whisper 模型快照用 `asset-manifest.json` 记录 schema、model ID、固定 
 lock + 跨进程文件锁保证同一模型只有一个写入者。同 revision 重启复用已验证快照；损坏或
 revision 变化才重建。
 
+## 可选功能：朗读与图片文字识别
+
+导入服务提供两项可选功能，均依赖可选 extra，缺失时不影响其他功能：
+
+| 功能 | extra | 额外条件 | 输出 |
+| --- | --- | --- | --- |
+| Kokoro 朗读 | `tts`（kokoro-onnx、onnxruntime、numpy） | 模型文件 `kokoro-v1.0.onnx`、`voices-v1.0.bin`，用 `uv run python scripts/download_kokoro_models.py` 下载；`ECHO_TTS_MODELS_PATH` 或 `[tts] model_dir` 指定目录，默认 `<cache_root>/models/kokoro` | `media/tts-article.wav` + `media_items` |
+| 图片 OCR | `ocr`（rapidocr-onnxruntime，模型随 wheel） | 或 `[ocr] engine = "paddleocr_api"` + `allow_cloud = true` + `secrets.toml [ocr].token`（会上传图片） | `ocr.json` |
+
+`GET /api/v1/features` 与 `import-capabilities.features` 返回
+`{"tts": {"available", "reason", "engine"?, "message"?}, "ocr": {…}}`。`reason` 取值：
+`disabled`、`dependencies_missing`、`model_missing`、`cloud_not_allowed`、`missing_endpoint`、
+`missing_token`。功能不可用时 `POST /api/v1/items/{id}/tts|ocr` 返回
+`503 {"detail": {"code": "feature_disabled", "feature", "reason", "message": "…功能未启用：…"}}`，
+前端不显示对应按钮。可用时返回 `202` 任务对象，用 `GET /api/v1/enrichment-jobs/{id}` 轮询；
+完成后导入服务请求 Echo 重新扫描，新文件随即进入阅读界面和全文检索。
+
 ## 安装版同源代理
 
 安装版浏览器先访问宿主生成的 `/session/{token}`，Rust 用 constant-time 比较后设置

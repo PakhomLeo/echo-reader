@@ -46,6 +46,9 @@ pub async fn put_article(
     atomic_write(&path, payload.markdown.as_bytes()).map_err(ApiError::from)?;
     touch_manifest(item)?;
 
+    drop(index);
+    state.reindex_search_item(&id).await;
+
     let version = version_of(payload.markdown.as_bytes());
     Ok(Json(SaveResult {
         version,

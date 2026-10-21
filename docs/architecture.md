@@ -46,8 +46,11 @@ state/cache/config/logs/tmp。安装目录无持久用户数据，可整体替�
 持久 `app.json` 在启动时也执行非文件系统根与持久控制目录 overlap 校验；无效配置明确失败，
 不会先以危险 root 启动再等待用户切换。
 
-Echo 索引位于内存和文件系统；`imports.db` 保存 batch/job/event，`medialab.db` 保存生产任务
-与 ASR 数据。imports schema v2 用 `library_key + item_path` 表示成功产物；`item_path` 必须是当前
+Echo 条目索引位于内存；全文检索索引是 SQLite FTS5 缓存文件（安装版在
+`<cache_root>/echo-reader/search/`），只从资料库文件派生，可随时删除并通过
+`POST /api/v1/search/rebuild` 或 `echo-backend --rebuild-search-index` 重建；资料库目录始终是唯一数据来源。
+`imports.db` 保存 batch/job/event，`medialab.db` 保存生产任务
+与 ASR 数据。可选功能的产物（朗读音频、`ocr.json`）直接写入条目目录。imports schema v2 用 `library_key + item_path` 表示成功产物；`item_path` 必须是当前
 资料库内的安全相对路径，不保存可失效的机器绝对 `out_dir`。
 
 切库与 rescan 都在各自服务内串行化。根宿主在一个 state lock 内拒绝活动导入，验证路径

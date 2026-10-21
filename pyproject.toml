@@ -30,6 +30,8 @@ package = [
 [project.optional-dependencies]
 local-asr = ["medialab[local-asr]"]
 funasr = ["medialab[funasr]"]
+tts = ["medialab[tts]"]
+ocr = ["medialab[ocr]"]
 render = ["medialab[render]"]
 
 [tool.setuptools.packages.find]

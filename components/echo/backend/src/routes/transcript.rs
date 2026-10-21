@@ -158,6 +158,8 @@ pub async fn patch_transcript(
         serde_json::to_vec_pretty(&transcript).map_err(|e| ApiError::internal(format!("{e}")))?;
     atomic_write(&path, &out).map_err(ApiError::from)?;
     touch_manifest(item)?;
+    drop(index);
+    state.reindex_search_item(&id).await;
 
     Ok(Json(SaveResult {
         version: version_of(&out),

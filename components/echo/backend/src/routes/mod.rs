@@ -8,6 +8,7 @@ pub mod items;
 pub mod library;
 mod library_file;
 pub mod media;
+pub mod search;
 pub mod security;
 pub mod transcript;
 
@@ -42,6 +43,13 @@ pub fn api() -> Router<AppState> {
             "/items/{id}/image-reference",
             axum::routing::delete(images::delete_image_reference),
         )
+        .route("/items/{id}/ocr", get(search::get_item_ocr))
+        .route("/items/{id}/ocr", post(import_proxy::forward))
+        .route("/items/{id}/tts", post(import_proxy::forward))
+        .route("/enrichment-jobs/{id}", get(import_proxy::forward))
+        .route("/search", get(search::search))
+        .route("/search/status", get(search::status))
+        .route("/search/rebuild", post(search::rebuild))
         .route("/library/rescan", post(library::rescan))
         .route("/library/problems", get(library::problems))
         .route("/library/browse", get(library::browse))
@@ -63,6 +71,7 @@ pub fn api() -> Router<AppState> {
         .route("/import-jobs/{id}/reindex", post(import_proxy::forward))
         .route("/import-diagnostics", get(import_proxy::forward))
         .route("/credential-health", get(import_proxy::forward))
+        .route("/features", get(import_proxy::forward))
 }
 
 pub fn internal() -> Router<AppState> {

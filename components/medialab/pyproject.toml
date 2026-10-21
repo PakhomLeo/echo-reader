@@ -27,6 +27,14 @@ funasr = [
     "torch>=2.2,<3",
     "torchaudio>=2.2,<3",
 ]
+# 可选：Kokoro 离线朗读（模型需另行下载，见 scripts/download_kokoro_models.py）
+tts = [
+    "kokoro-onnx==0.5.0",
+    "onnxruntime>=1.20,<2",
+    "numpy>=2,<3",
+]
+# 可选：本地图片文字识别（PP-OCR ONNX 模型随 wheel 提供）
+ocr = ["rapidocr-onnxruntime==1.4.4"]
 local-asr = [
     "huggingface-hub>=1.3,<2",
     "numpy>=2.3,<3",
