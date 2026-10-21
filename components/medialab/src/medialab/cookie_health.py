@@ -1,6 +1,6 @@
 """Offline Cookie health check for SessionBridge credential snapshots.
 
-Ported from UP's cookie checker/validator, adapted to MediaLab's model where Cookie only
+Offline cookie checker/validator adapted to MediaLab's model where Cookie only
 lives in process memory (``CredentialBroker``) and is never written to disk.  The check is
 purely local: it inspects cookie *names* and expiry timestamps of a snapshot, performs no
 network request and never returns cookie values.

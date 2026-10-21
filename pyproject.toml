@@ -7,6 +7,8 @@ name = "echo-reader-tools"
 version = "0.1.0"
 description = "Integration tools for the Echo reader and MediaLab content producer"
 requires-python = ">=3.12,<3.13"
+license = "MIT"
+license-files = ["LICENSE"]
 dependencies = [
     "fastapi>=0.116,<1",
     "httpx>=0.27,<1",

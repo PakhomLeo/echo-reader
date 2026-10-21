@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 470" width="960" height="470" role="img" aria-labelledby="t d" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, 'Noto Sans SC', sans-serif">
+  <title id="t">Echo Reader import flow</title>
+  <desc id="d">A batch of URLs is persisted, claimed by workers and planned by MediaLab. Articles are extracted; videos are downloaded and transcribed with local or online ASR, checked by a quality gate, published atomically into the library and indexed by Echo. Failed jobs keep their error and can be retried. Read-aloud and OCR run later on demand.</desc>
+  <style>
+    .bg{fill:#ffffff}
+    .box{fill:#f6f8fa;stroke:#57606a;stroke-width:1.5}
+    .acc{fill:#ddf4ff;stroke:#0969da;stroke-width:1.5}
+    .grn{fill:#dafbe1;stroke:#1a7f37;stroke-width:1.5}
+    .red{fill:#ffebe9;stroke:#cf222e;stroke-width:1.5}
+    .opt{fill:#fff8c5;stroke:#9a6700;stroke-width:1.5;stroke-dasharray:6 4}
+    .h{fill:#1f2328;font-size:14px;font-weight:600}
+    .s{fill:#59636e;font-size:11.5px}
+    .ln{stroke:#57606a;stroke-width:1.6;fill:none}
+    .lr{stroke:#cf222e;stroke-width:1.4;fill:none;stroke-dasharray:5 4}
+    .lo{stroke:#9a6700;stroke-width:1.4;fill:none;stroke-dasharray:5 4}
+    .lb{fill:#59636e;font-size:11px}
+    .ah{fill:#57606a}
+    @media (prefers-color-scheme: dark){
+      .bg{fill:#0d1117}
+      .box{fill:#161b22;stroke:#8b949e}
+      .acc{fill:#0c2d6b;stroke:#4493f8}
+      .grn{fill:#0f3a1e;stroke:#3fb950}
+      .red{fill:#4a1418;stroke:#f85149}
+      .opt{fill:#3b2e00;stroke:#d29922}
+      .h{fill:#e6edf3}
+      .s,.lb{fill:#9198a1}
+      .ln{stroke:#8b949e}
+      .lr{stroke:#f85149}
+      .lo{stroke:#d29922}
+      .ah{fill:#8b949e}
+    }
+  </style>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker>
+  </defs>
+  <rect class="bg" width="960" height="470" rx="12"/>
+
+  <rect class="box" x="20" y="40" width="150" height="80" rx="10"/>
+  <text class="h" x="95" y="70" text-anchor="middle">1. Paste URLs</text>
+  <text class="s" x="95" y="90" text-anchor="middle">1–50 links or .txt/.csv</text>
+  <text class="s" x="95" y="106" text-anchor="middle">validated in the UI</text>
+
+  <rect class="acc" x="210" y="40" width="160" height="80" rx="10"/>
+  <text class="h" x="290" y="70" text-anchor="middle">2. Batch persisted</text>
+  <text class="s" x="290" y="90" text-anchor="middle">imports.db: batch,</text>
+  <text class="s" x="290" y="106" text-anchor="middle">jobs, timeline events</text>
+
+  <rect class="acc" x="410" y="40" width="160" height="80" rx="10"/>
+  <text class="h" x="490" y="70" text-anchor="middle">3. Workers claim</text>
+  <text class="s" x="490" y="90" text-anchor="middle">3 workers, atomic claim</text>
+  <text class="s" x="490" y="106" text-anchor="middle">capability pre-check</text>
+
+  <rect class="acc" x="610" y="40" width="160" height="80" rx="10"/>
+  <text class="h" x="690" y="70" text-anchor="middle">4. Plan import</text>
+  <text class="s" x="690" y="90" text-anchor="middle">auto → article / media /</text>
+  <text class="s" x="690" y="106" text-anchor="middle">transcribe (local/online)</text>
+
+  <rect class="box" x="610" y="170" width="160" height="80" rx="10"/>
+  <text class="h" x="690" y="198" text-anchor="middle">Article</text>
+  <text class="s" x="690" y="218" text-anchor="middle">HTTP / JS render / site</text>
+  <text class="s" x="690" y="234" text-anchor="middle">adapter → Markdown</text>
+
+  <rect class="box" x="800" y="170" width="140" height="80" rx="10"/>
+  <text class="h" x="870" y="198" text-anchor="middle">Video / audio</text>
+  <text class="s" x="870" y="218" text-anchor="middle">yt-dlp (+ session)</text>
+  <text class="s" x="870" y="234" text-anchor="middle">FFmpeg → MP3</text>
+
+  <rect class="box" x="800" y="290" width="140" height="80" rx="10"/>
+  <text class="h" x="870" y="318" text-anchor="middle">ASR</text>
+  <text class="s" x="870" y="338" text-anchor="middle">Whisper / Fun-ASR-Nano</text>
+  <text class="s" x="870" y="354" text-anchor="middle">or online DashScope</text>
+
+  <rect class="acc" x="610" y="290" width="160" height="80" rx="10"/>
+  <text class="h" x="690" y="318" text-anchor="middle">5. Quality gate</text>
+  <text class="s" x="690" y="338" text-anchor="middle">coverage + text density</text>
+  <text class="s" x="690" y="354" text-anchor="middle">retry once, else reject</text>
+
+  <rect class="grn" x="410" y="290" width="160" height="80" rx="10"/>
+  <text class="h" x="490" y="318" text-anchor="middle">6. Atomic publish</text>
+  <text class="s" x="490" y="338" text-anchor="middle">.staging → library item</text>
+  <text class="s" x="490" y="354" text-anchor="middle">rollback-safe swap</text>
+
+  <rect class="grn" x="210" y="290" width="160" height="80" rx="10"/>
+  <text class="h" x="290" y="318" text-anchor="middle">7. Index</text>
+  <text class="s" x="290" y="338" text-anchor="middle">Echo rescan + FTS5</text>
+  <text class="s" x="290" y="354" text-anchor="middle">job → succeeded</text>
+
+  <rect class="grn" x="20" y="290" width="150" height="80" rx="10"/>
+  <text class="h" x="95" y="318" text-anchor="middle">8. Read</text>
+  <text class="s" x="95" y="338" text-anchor="middle">article, transcript,</text>
+  <text class="s" x="95" y="354" text-anchor="middle">player, search, edit</text>
+
+  <rect class="red" x="610" y="396" width="160" height="62" rx="10"/>
+  <text class="h" x="690" y="420" text-anchor="middle">Failed / rejected</text>
+  <text class="s" x="690" y="440" text-anchor="middle">error kept · nothing published</text>
+  <text class="s" x="690" y="454" text-anchor="middle">retry / cancel from task page</text>
+
+  <rect class="opt" x="20" y="400" width="350" height="54" rx="10"/>
+  <text class="h" x="195" y="423" text-anchor="middle">On demand: read-aloud (Kokoro) · OCR</text>
+  <text class="s" x="195" y="442" text-anchor="middle">writes media/tts-article.wav or ocr.json into the item, then rescans</text>
+
+  <path class="ln" d="M170,80 L208,80" marker-end="url(#a)"/>
+  <path class="ln" d="M370,80 L408,80" marker-end="url(#a)"/>
+  <path class="ln" d="M570,80 L608,80" marker-end="url(#a)"/>
+  <path class="ln" d="M690,120 L690,168" marker-end="url(#a)"/>
+  <path class="ln" d="M770,95 C830,95 870,120 870,168" marker-end="url(#a)"/>
+  <path class="ln" d="M870,250 L870,288" marker-end="url(#a)"/>
+  <path class="ln" d="M800,330 L772,330" marker-end="url(#a)"/>
+  <path class="ln" d="M610,330 L572,330" marker-end="url(#a)"/>
+  <path class="ln" d="M650,250 C650,275 520,268 510,288" marker-end="url(#a)"/>
+  <text class="lb" x="560" y="268">article</text>
+  <path class="ln" d="M410,330 L372,330" marker-end="url(#a)"/>
+  <path class="ln" d="M210,330 L172,330" marker-end="url(#a)"/>
+  <path class="lr" d="M690,370 L690,394" marker-end="url(#a)"/>
+  <text class="lb" x="698" y="387">reject</text>
+  <path class="lr" d="M870,370 C870,420 820,427 772,427" marker-end="url(#a)"/>
+  <text class="lb" x="830" y="400">download / ASR error</text>
+  <path class="lo" d="M95,370 L95,398" marker-end="url(#a)"/>
+</svg>

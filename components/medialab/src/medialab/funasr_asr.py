@@ -1,4 +1,4 @@
-"""Optional local ASR engine based on FunASR + Fun-ASR-Nano (ported from UP).
+"""Optional local ASR engine based on FunASR + Fun-ASR-Nano.
 
 Select it with ``[local_asr].engine = "funasr_nano"`` and install the ``funasr`` extra.
 Like :mod:`medialab.local_asr`, every heavy dependency (``funasr``, ``torch``) is imported
@@ -126,12 +126,17 @@ class FunAsrNanoPipeline:
         fcfg = self._funasr_cfg()
         kwargs: dict[str, Any] = {
             "model": fcfg.get("model") or DEFAULT_MODEL,
-            "trust_remote_code": bool(fcfg.get("trust_remote_code", True)),
+            # FunASR >= 1.4 ships the FunASRNano model class, so no model-repo code is needed.
+            # trust_remote_code=True would let FunASR pip-install a model repo's
+            # requirements.txt and import arbitrary Python; keep it an explicit opt-in.
+            "trust_remote_code": fcfg.get("trust_remote_code", False) is True,
             "vad_model": fcfg.get("vad_model", "fsmn-vad"),
             "vad_kwargs": {"max_single_segment_time": int(fcfg.get("vad_max_single_segment_time", 10000))},
             "device": device,
             "disable_update": True,
         }
+        if fcfg.get("model_revision"):
+            kwargs["model_revision"] = str(fcfg["model_revision"])
         hub = fcfg.get("hub", "hf")
         auxiliary_hub = fcfg.get("auxiliary_hub", "ms")
         if hub:

@@ -26,7 +26,7 @@
 | SessionBridge 消息协议 | [扩展 README](../components/medialab/browser-extension/README.md) 与 `bridge.py` |
 | 配置密钥 | [config README](../config/README.md)；真实值不进 Git |
 | 来源迁移和仓库完整性 | [迁移记录](migration.md) |
-| 许可与第三方声明 | [项目声明](../THIRD_PARTY_NOTICES.md) 与组件 licenses |
+| 许可与第三方声明 | [MIT LICENSE](../LICENSE)、[第三方声明](../THIRD_PARTY_NOTICES.md) 与组件 licenses |
 
 ## 历史证据
 

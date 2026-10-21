@@ -45,6 +45,26 @@ function Assert-SafeRecursiveRemovalTarget(
     return $targetFull
 }
 
+# GPL-3.0 text-to-speech dependencies (eSpeak NG via espeakng-loader, phonemizer-fork) and the
+# kokoro-onnx package that pulls them in are optional, user-installed extras. They must never be
+# shipped in the bundle, installer or any sidecar.
+# PyInstaller excludes them explicitly below and the assembled bundle is checked afterwards.
+
+function Assert-NoGplTtsDependency([string]$Root, [string]$Label) {
+    if (-not (Test-Path -LiteralPath $Root -PathType Container)) {
+        throw "$Label does not exist: $Root"
+    }
+    $found = @(Get-ChildItem -LiteralPath $Root -Recurse -Force | Where-Object {
+        $_.Name -imatch '(espeak|phonemizer|kokoro_onnx|kokoro-onnx)'
+    })
+    if ($found.Count -gt 0) {
+        $relative = $found | ForEach-Object {
+            [IO.Path]::GetRelativePath($Root, $_.FullName).Replace('\','/')
+        }
+        throw "$Label contains optional GPL-3.0 TTS dependencies that must not be distributed: $($relative -join ', ')"
+    }
+}
+
 function Assert-NoCredentialResidue([string]$Root, [string]$Label) {
     if (-not (Test-Path -LiteralPath $Root -PathType Container)) {
         throw "$Label does not exist: $Root"
@@ -148,6 +168,9 @@ try {
         '--collect-all', 'sherpa_onnx',
         '--collect-all', 'websocket_server',
         '--collect-all', 'websocket',
+        '--exclude-module', 'kokoro_onnx',
+        '--exclude-module', 'phonemizer',
+        '--exclude-module', 'espeakng_loader',
         (Join-Path $projectRoot 'installer\desktop_entry.py')
     )
     Invoke-Checked 'Python desktop host freeze' { & $uvPath @pyinstallerArguments }
@@ -177,8 +200,10 @@ try {
     Copy-Item -LiteralPath (Join-Path $projectRoot 'installer\README-INSTALLED.md') -Destination (Join-Path $bundleRoot 'README.md')
     Copy-Item -LiteralPath (Join-Path $projectRoot 'README.md') -Destination (Join-Path $bundleRoot 'DEVELOPMENT.md')
     Copy-Item -LiteralPath (Join-Path $projectRoot 'THIRD_PARTY_NOTICES.md') -Destination $bundleRoot
+    Copy-Item -LiteralPath (Join-Path $projectRoot 'LICENSE') -Destination (Join-Path $bundleRoot 'LICENSE.txt')
 
     Assert-NoCredentialResidue $bundleRoot 'Assembled bundle'
+    Assert-NoGplTtsDependency $bundleRoot 'Assembled bundle'
 
     $manifest = Get-ChildItem -LiteralPath $bundleRoot -File -Recurse | Sort-Object FullName | ForEach-Object {
         [pscustomobject]@{

@@ -78,7 +78,7 @@ fn is_bootstrap_path(path: &str) -> bool {
         .is_some_and(|token| !token.is_empty() && !token.contains('/'))
 }
 
-fn constant_time_token_eq(expected: &str, candidate: &str) -> bool {
+pub(crate) fn constant_time_token_eq(expected: &str, candidate: &str) -> bool {
     let expected_hash = blake3::hash(expected.as_bytes());
     let candidate_hash = blake3::hash(candidate.as_bytes());
     expected_hash

@@ -19,6 +19,8 @@ def test_engine_resolution(monkeypatch: pytest.MonkeyPatch):
     assert ocr.resolve_engine({"ocr": cloud}) == (None, "cloud_not_allowed")
     assert ocr.resolve_engine({"ocr": {**cloud, "allow_cloud": True}}) == (None, "missing_token")
     ready = {**cloud, "allow_cloud": True, "token": "t"}
+    insecure = {**ready, "endpoint": "http://ocr.test/jobs"}
+    assert ocr.resolve_engine({"ocr": insecure}) == (None, "insecure_endpoint")
     assert ocr.resolve_engine({"ocr": ready}) == ("paddleocr_api", None)
     assert ocr.resolve_engine({"ocr": {**ready, "engine": "auto"}}) == ("paddleocr_api", None)
     monkeypatch.setattr(ocr, "_rapidocr_installed", lambda: True)
@@ -82,3 +84,25 @@ def test_unavailable_engine_raises(monkeypatch: pytest.MonkeyPatch, tmp_path: Pa
     monkeypatch.setattr(ocr, "_rapidocr_installed", lambda: False)
     with pytest.raises(ocr.OcrError, match="dependencies_missing"):
         ocr.recognize_image(tmp_path / "x.png", {})
+
+
+def test_item_images_ignores_symlinks_leaving_the_item(tmp_path: Path):
+    outside = tmp_path / "outside.png"
+    outside.write_bytes(b"\x89PNG")
+    item = tmp_path / "item"
+    (item / "images").mkdir(parents=True)
+    (item / "images" / "0001.png").write_bytes(b"\x89PNG")
+    (item / "images" / "0002.png").symlink_to(outside)
+    assert ocr.item_images(item) == ["images/0001.png"]
+
+
+def test_paddle_api_rejects_unsafe_job_ids_and_plain_http_results():
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json={"data": {"jobId": "../../admin"}})
+
+    api = ocr.PaddleOcrApi("https://ocr.test/jobs", "secret", poll_interval=0,
+                           client=httpx.Client(transport=httpx.MockTransport(handler)))
+    with pytest.raises(ocr.OcrError, match="invalid jobId"):
+        api.submit(Path(__file__))
+    with pytest.raises(ocr.OcrError, match="https"):
+        api.fetch("http://files.test/r.jsonl")

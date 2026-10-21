@@ -1,4 +1,4 @@
-"""Offline Cookie health checks (ported from UP's cookie checker)."""
+"""Offline Cookie health checks."""
 
 import unittest
 

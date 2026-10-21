@@ -1,4 +1,4 @@
-"""Weibo article adapter (ported from UP's extractor onto the SiteAdapter contract)."""
+"""Weibo article adapter on the SiteAdapter contract."""
 
 import json
 import unittest

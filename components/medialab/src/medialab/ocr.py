@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import re
 import threading
 import time
 from pathlib import Path
@@ -52,8 +53,11 @@ def _paddle_ready(section: dict[str, Any]) -> str | None:
     """``None`` when the cloud engine can be used, else the reason it cannot."""
     if not section.get("allow_cloud", False):
         return "cloud_not_allowed"
-    if not str(section.get("endpoint") or "").strip():
+    endpoint = str(section.get("endpoint") or "").strip()
+    if not endpoint:
         return "missing_endpoint"
+    if not endpoint.lower().startswith("https://"):
+        return "insecure_endpoint"
     if not str(section.get("token") or "").strip():
         return "missing_token"
     return None
@@ -134,7 +138,10 @@ class PaddleOcrApi:
         job_id = (response.json().get("data") or {}).get("jobId")
         if not job_id:
             raise OcrError("PaddleOCR submit response has no jobId")
-        return str(job_id)
+        job_id = str(job_id)
+        if not re.fullmatch(r"[A-Za-z0-9_.-]{1,128}", job_id) or job_id in {".", ".."}:
+            raise OcrError("PaddleOCR submit response has an invalid jobId")
+        return job_id
 
     def wait(self, job_id: str) -> str:
         for _ in range(self.max_polls):
@@ -157,6 +164,8 @@ class PaddleOcrApi:
         raise OcrError("PaddleOCR job did not finish in time")
 
     def fetch(self, result_url: str) -> str:
+        if not result_url.lower().startswith("https://"):
+            raise OcrError("PaddleOCR result URL must use https://")
         response = self.client.get(result_url)
         if response.status_code >= 400:
             raise OcrError(f"PaddleOCR result returned HTTP {response.status_code}")
@@ -192,11 +201,14 @@ def recognize_image(image: Path, cfg: dict | None, *, engine: str | None = None)
 def item_images(folder: Path, limit: int = 200) -> list[str]:
     """Relative POSIX paths of images in ``<item>/images`` (sorted, bounded)."""
     images_dir = folder / "images"
-    if not images_dir.is_dir():
+    if not images_dir.is_dir() or images_dir.is_symlink():
         return []
+    root = folder.resolve()
     found = sorted(
         path.relative_to(folder).as_posix()
         for path in images_dir.rglob("*")
-        if path.is_file() and path.suffix.lower() in IMAGE_SUFFIXES
+        # Never follow symlinks out of the item: OCR may upload images to a cloud API.
+        if path.is_file() and not path.is_symlink() and path.suffix.lower() in IMAGE_SUFFIXES
+        and path.resolve().is_relative_to(root)
     )
     return found[:limit]

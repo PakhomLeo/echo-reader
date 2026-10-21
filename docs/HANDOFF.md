@@ -48,8 +48,8 @@ online/local ASR 均不绕过质量门禁。详细字段和边界只在[集成�
 
 ## 剩余风险与不得过度声明的结论
 
-- 公开分发仍被组合项目无仓库级许可证以及包内 FFmpeg/GPL 义务阻断。installer 和
-  standalone zip 只能私人本机验证。
+- 源码已采用 MIT 许可证；公开分发 installer / standalone zip 仍需随包提供第三方许可证原文并
+  履行包内 FFmpeg GPLv3 构建的源码提供义务（见 `THIRD_PARTY_NOTICES.md`）。
 - 安全 DNS pin 刻意不支持代理或环境代理；这是 fail-closed 功能边界，不是仍开放的绕过
   实现。需要代理的未来方案必须重新建立连接目标保证。
 - Edge renderer 有 HTTPS/host/resource 预算，但不等于 curl 路径的 transfer-scoped DNS pin；不得

@@ -1,4 +1,4 @@
-"""Optional Fun-ASR-Nano engine (ported from UP); runs without funasr/torch installed."""
+"""Optional Fun-ASR-Nano engine; runs without funasr/torch installed."""
 
 from __future__ import annotations
 
@@ -93,6 +93,9 @@ def test_pipeline_infer_with_and_without_diarization(tmp_path: Path, fake_funasr
     assert model.kwargs["model"] == "FunAudioLLM/Fun-ASR-Nano-2512"
     assert model.kwargs["spk_model"] == "cam++"
     assert model.kwargs["vad_kwargs"]["hub"] == "ms" and model.kwargs["hub"] == "hf"
+    # Remote model code is never executed unless explicitly enabled.
+    assert model.kwargs["trust_remote_code"] is False
+    assert "model_revision" not in model.kwargs
     assert model.generate_calls[-1]["hotwords"] == ["Echo"]
     assert model.generate_calls[-1]["language"] == "zh"
 

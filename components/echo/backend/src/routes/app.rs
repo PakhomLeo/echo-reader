@@ -9,9 +9,13 @@ pub fn require_internal_token(state: &AppState, headers: &HeaderMap) -> Result<(
     let supplied = headers
         .get("X-Echo-Internal-Token")
         .and_then(|value| value.to_str().ok());
-    if state.config.internal_token.as_deref().is_none()
-        || supplied != state.config.internal_token.as_deref()
-    {
+    let authorized = match (state.config.internal_token.as_deref(), supplied) {
+        (Some(expected), Some(candidate)) => {
+            crate::routes::security::constant_time_token_eq(expected, candidate)
+        }
+        _ => false,
+    };
+    if !authorized {
         return Err(ApiError::new(
             StatusCode::UNAUTHORIZED,
             "UNAUTHORIZED",

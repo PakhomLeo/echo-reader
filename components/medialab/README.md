@@ -69,7 +69,7 @@ JS 默认策略是微信 `always`，知乎和头条 `on_miss`，其他平台 `of
   `CredentialBroker.health_report()` 只检查内存快照里的 Cookie 名称与过期时间，不联网、不返回
   Cookie 值；导入服务通过 `GET /api/v1/credential-health` 暴露。
 
-以上四项移植自独立项目 UP（Unified Processor），已改写为 MediaLab 的适配器/配置契约。
+以上四项均实现为 MediaLab 的适配器/配置契约，可单独关闭。
 
 可选增强（缺依赖时 `probe_*()` 报告原因，其他功能不受影响）：
 
@@ -129,3 +129,7 @@ uv run python -m pytest components\medialab\tests -q
 ```
 
 完整仓库质量门使用根 `scripts/verify.ps1`。
+
+## License
+
+MIT – see [LICENSE](LICENSE). Third-party notices: [THIRD_PARTY_NOTICES.md](../../THIRD_PARTY_NOTICES.md).

@@ -8,7 +8,7 @@
 
 > 本文件整合三方面信息：
 > 1. **medialab 现状**（本仓库：下载/转写/refine 已完备，YouTube 卡在会话信任）
-> 2. **ChatGPT 方案研究**（分享对话《抓取任务方案优化》：Browser Session Bridge 架构）
+> 2. **外部方案研究**（Browser Session Bridge 架构草案）
 > 3. **我们自己的实测经验**（LESSONS.md：IP 信任 ≠ 会话信任、PO Token 绑定关系、换 IP 唯一解、无痕导出法）
 
 ---
@@ -24,7 +24,7 @@
 
 **结论**：手动导出 Cookie 是可用但烦人的下限；PO Token 服务是无效的弯路；正解是 **"借用用户当前受信 Chrome 会话"**。
 
-## 2. 目标架构：Browser Session Bridge（整合 ChatGPT 方案）
+## 2. 目标架构：Browser Session Bridge
 
 ```
 用户提交 URL

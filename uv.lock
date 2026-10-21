@@ -1013,7 +1013,7 @@ tts = [
 requires-dist = [
     { name = "cssselect", specifier = ">=1.2" },
     { name = "curl-cffi", specifier = "==0.15.0" },
-    { name = "funasr", marker = "extra == 'funasr'", specifier = ">=1.3.7,<2" },
+    { name = "funasr", marker = "extra == 'funasr'", specifier = ">=1.4,<2" },
     { name = "httpx", specifier = ">=0.27" },
     { name = "huggingface-hub", marker = "extra == 'local-asr'", specifier = ">=1.3,<2" },
     { name = "kokoro-onnx", marker = "extra == 'tts'", specifier = "==0.5.0" },

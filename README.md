@@ -1,53 +1,203 @@
 # Echo Reader
 
-Echo Reader 是一个本机 Windows 内容导入与阅读应用：MediaLab 把 URL 生产为标准资料条目，
-Echo 扫描、阅读和编辑条目，`src/echo_reader` 负责持久批次、进程生命周期和两者协调。
-`LIBRARY_ROOT` 下的文件是数据面，Echo `/api/v1` 是控制面；两个组件不相互导入内部代码。
+**English** | [简体中文](README.zh-CN.md)
 
-## 安装版
+Echo Reader is a local-first reading app for web content. Paste links to articles, posts,
+podcasts or videos; it saves them as plain files on your disk (Markdown article, images,
+media, time-coded transcript) and gives you a fast reader with full-text search, a
+synchronized transcript player, a Markdown editor and optional read-aloud and OCR.
 
-安装版由一个 Python 宿主和一个 Rust 网关进程组成。Rust 在动态 loopback 端口上同源托管
-React 和全部公开 API；私有 Python 导入服务另用动态 loopback 端口，只由 Rust 按精确路由
-代理。安装目录只放可替换程序；资料库在 Windows Documents 已知文件夹，状态、模型、配置、
-日志和临时文件在 `%LOCALAPPDATA%\EchoReader` 下。
+Everything runs on your own machine. There is no account, no server and no telemetry.
+Cloud services (online speech recognition, LLM clean-up, cloud OCR) are optional and off
+until you configure them.
 
-因 Chrome 扩展的 SessionBridge 合同固定为 `127.0.0.1:19876`，应用是每台机器单实例；
-再次启动会打开已运行实例。关闭浏览器标签不会停止应用；侧栏“退出 Echo Reader”仅在
-无活动导入时接受退出。宿主用每次启动随机 URL 建立浏览器 session，未持有 session 的其他
-本机进程不能直接读取公开 API 或资料库文件。安装、持久路径、浏览器授权和选择性迁移见
-[安装与本机运行](docs/installation.md)。
+![Architecture](docs/assets/architecture.svg)
 
-## 源码开发
+## Features
+
+- **Batch import** – paste up to 50 URLs (or load a `.txt`/`.csv`); each URL becomes one stable
+  library item. Jobs are persisted in SQLite, survive restarts, and can be retried, cancelled or
+  re-indexed from the task page.
+- **Article extraction** – generic pages via Trafilatura plus site adapters for WeChat
+  articles, Xiaohongshu, Zhihu, Toutiao, Weibo and X/Twitter.
+- **Video and audio** – downloads through yt-dlp (Bilibili, YouTube, Douyin and other
+  yt-dlp-supported sites), extracts audio with FFmpeg and transcribes it.
+- **Speech recognition**
+  - local: OpenVINO Whisper-small INT8 with Silero VAD and anonymous speaker diarization
+    (sherpa-onnx), or Fun-ASR-Nano via FunASR (CPU/CUDA/MPS/XPU);
+  - online (optional): Alibaba Cloud DashScope ASR through your own OSS bucket.
+  A quality gate (character density and timeline coverage) rejects transcripts that are
+  essentially empty, such as music-only videos, instead of publishing them as successes.
+- **Optional LLM clean-up** – turn a raw transcript into an article with DashScope, any
+  OpenAI-compatible endpoint, or a local Ollama model.
+- **Reader** – React UI with Markdown rendering, a CodeMirror editor, image upload, media
+  player with transcript seek, and transcript editing.
+- **Full-text search** – SQLite FTS5 index (CJK-aware) over titles, articles, transcripts and
+  OCR text. The index is a cache derived from the library and can be rebuilt at any time.
+- **Read-aloud (optional)** – offline Kokoro-82M text-to-speech (`tts` extra).
+- **Image OCR (optional)** – local RapidOCR (`ocr` extra), or the PaddleOCR-VL cloud API when
+  you explicitly allow uploads.
+- **Browser Session Bridge (optional)** – a Chrome extension that lends the cookies of sites
+  *you* authorize to the local importer for content that requires your login. Cookies stay in
+  memory and are never written to the library.
+- **Windows desktop build** – a per-user installer with a single-origin Rust gateway, a private
+  Python import service, random per-launch session tokens and single-instance handling.
+
+## How it works
+
+![Import flow](docs/assets/import-flow.svg)
+
+The repository is a monorepo with two independent components and an integration layer:
+
+| Path | Role | Stack |
+|---|---|---|
+| `components/medialab` | Producer: probes, downloads, extracts, transcribes and publishes items | Python 3.12, yt-dlp, curl_cffi, Trafilatura, OpenVINO / FunASR |
+| `components/echo/backend` | Gateway and reader API: scans the library, serves media, search index, proxies the import API | Rust, Axum, rusqlite (FTS5) |
+| `components/echo/frontend` | Reader UI | React 19, Vite, CodeMirror 6 |
+| `src/echo_reader` | Import service (batches, jobs, enrichment), desktop host, migration | FastAPI, SQLite |
+| `components/medialab/browser-extension` | Optional Session Bridge (Chrome MV3) | JavaScript |
+
+The **library folder is the single source of truth**: each item is a directory with
+`manifest.json`, optional `article.md`, `transcript.json`, `images/`, `media/` and `ocr.json`.
+Echo never imports MediaLab code and vice versa; the file format
+([`components/echo/docs/file-format.md`](components/echo/docs/file-format.md)) and the HTTP API
+([`components/echo/docs/api.md`](components/echo/docs/api.md)) are the contracts.
+
+## Requirements
+
+- Python 3.12 and [uv](https://docs.astral.sh/uv/)
+- Rust (stable, edition 2024) with `rustfmt` and `clippy`
+- [Bun](https://bun.sh/) for the frontend, and Node.js ≥ 22 for Vitest
+- FFmpeg on `PATH` for audio/video imports
+- Optional: [mise](https://mise.jdx.dev) installs the pinned tool versions from `mise.toml`
+
+Local Whisper ASR targets an Intel GPU through OpenVINO and does not silently fall back to the
+CPU; Fun-ASR-Nano runs on CPU, CUDA, Apple MPS or Intel XPU.
+
+## Quick start (Linux / macOS)
+
+```bash
+git clone <repository-url> echo-reader && cd echo-reader
+uv sync                                   # Python workspace (add --extra local-asr etc. as needed)
+(cd components/echo/frontend && bun install --frozen-lockfile && bun run build)
+mkdir -p content .runtime
+
+# terminal 1 – import service (loopback only)
+uv run echo-reader-service --host 127.0.0.1 --port 3100 \
+  --library-root content --runtime-root .runtime --echo-url http://127.0.0.1:3000
+
+# terminal 2 – Rust gateway + reader UI on http://127.0.0.1:3000
+cd components/echo/backend
+LIBRARY_ROOT=../../../content IMPORT_API_URL=http://127.0.0.1:3100 cargo run --release
+```
+
+Open <http://127.0.0.1:3000>. For frontend development run `bun run dev` in
+`components/echo/frontend` (Vite on port 5173 proxies `/api` to the gateway).
+
+## Quick start (Windows, source)
 
 ```powershell
-cd <repo-root>
 mise install
 .\scripts\setup.ps1
 .\scripts\run-reader.ps1
 ```
 
-开发时也可单独启动 Echo backend、Vite 和 import service。完整命令、包构建和验证见
-[开发指南](docs/development.md)。源码模式默认使用仓库 `content/`、`.runtime/` 和 `config/`；
-安装版不依赖或修改源码 checkout。
+`scripts\build-package.ps1 -Version <x.y.z>` builds the standalone bundle and, when Inno Setup is
+available, the per-user installer. See [docs/installation.md](docs/installation.md) and
+[docs/development.md](docs/development.md).
 
-## 现役合同
+## Optional features
 
-- 一个输入 URL 形成一个稳定 item；发布是 staging 快照和可回滚目录切换。
-- 导入批次、job 和时间线在 `imports.db` schema v2 持久化；成功产物只保存资料库相对
-  `item_path`，不持久安装机器的绝对路径。
-- 资料库切换会拒绝活动导入和与 state/cache/config/logs/tmp 重叠的目录，并对 Echo
-  切换与 `app.json` 持久化做失败回滚。
-- 页面和资源请求按跳验证 HTTPS/域名，每跳预解析公网 IP 并固定到该次传输；
-  安全 DNS 固定与代理不能同时使用，会明确失败。
-- 在线 ASR 在质量门禁通过前不发布；本地模型以 revision + 文件摘要 manifest 验证，
-  用跨进程锁避免并发下载，重启后复用已验证快照。
+| Feature | Install | Notes |
+|---|---|---|
+| Local Whisper ASR | `uv sync --extra local-asr` | Model `OpenVINO/whisper-small-int8-ov` is downloaded at a pinned revision and verified on first use |
+| Fun-ASR-Nano ASR | `uv sync --extra funasr` | Set `[local_asr].engine = "funasr_nano"`; pulls PyTorch. Remote model code stays disabled (`trust_remote_code = false`) |
+| Read-aloud | `uv sync --extra tts` then `uv run python scripts/download_kokoro_models.py` | Downloads ~350 MB of Kokoro v1.0 files and checks pinned SHA-256 digests. The extra installs GPL-3.0 packages (eSpeak NG, phonemizer-fork) on your machine only; they are never shipped by this project – see [License](#license) |
+| Local OCR | `uv sync --extra ocr` | RapidOCR with bundled PP-OCR ONNX models |
+| Cloud OCR | `[ocr] engine = "paddleocr_api"`, `allow_cloud = true`, HTTPS `endpoint`, token in `secrets.toml` | **Uploads item images to the configured service** |
+| Online ASR / LLM clean-up | copy `components/medialab/src/medialab/config/secrets.toml.example` to `config/secrets.toml` | Audio is uploaded to your OSS bucket and DashScope; clean-up can use an OpenAI-compatible endpoint or local Ollama instead |
 
-详细边界见[文档权威索引](docs/README.md)和[当前交付文档](docs/HANDOFF.md)。带日期报告是当时的
-实测证据，不自动成为现役架构说明。
+When an optional dependency or model is missing, the API answers `503 feature_disabled` with the
+reason and the UI hides the action; nothing else is affected.
 
-## 许可边界
+## Configuration
 
-本仓库和安装包当前只用于私人本机验证。组合项目没有仓库级许可证，包内 FFmpeg
-构建也带来 GPL 义务。[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) 保留第三方声明，不授予
-组合项目的再分发权；未完成项目许可选择和分发合规前，不得公开发布 installer 或
-standalone zip。
+- `config/secrets.toml` (git-ignored) – API keys and tokens. Never commit it.
+- `components/medialab/src/medialab/config/default_config.toml` – documented defaults; override
+  them in `config/config.toml`.
+- Gateway environment: `LIBRARY_ROOT`, `IMPORT_API_URL`, `ECHO_BIND` (loopback only),
+  `ECHO_WEB_ROOT`, `ECHO_SEARCH_INDEX`, `ECHO_PUBLIC_TOKEN`, `ECHO_INTERNAL_TOKEN`.
+- Read-aloud models: `ECHO_TTS_MODELS_PATH` or `[tts] model_dir`.
+
+## Security model
+
+Echo Reader is a single-user local application.
+
+- Both the gateway and the import service refuse to listen on non-loopback addresses, reject
+  requests whose `Host` is not loopback (DNS-rebinding defence), and reject state-changing
+  requests with a cross-site `Sec-Fetch-Site` or a foreign `Origin`.
+- The desktop build adds a random per-launch session token (HttpOnly, SameSite=Strict cookie)
+  for every page and API call, and a separate internal token between the gateway and the
+  private import service.
+- Outbound fetches validate HTTPS and public IP addresses per hop and pin the resolved address.
+- Cookies lent by the Session Bridge stay in process memory.
+
+Please report vulnerabilities privately as described in [SECURITY.md](SECURITY.md).
+
+## Responsible use
+
+Echo Reader is a personal reading and note-taking tool. You are responsible for how you use it.
+
+- **Only import content you are allowed to access and copy.** Respect copyright, the terms of
+  service of each website, and robots/rate-limit rules. Saving a copy for personal study does not
+  give you the right to republish it.
+- **Do not use it to bypass paywalls, DRM, access controls or geo-restrictions**, and do not use it
+  for bulk scraping, mirroring or redistribution.
+- **The Session Bridge uses your own browser login.** Authorize only sites and accounts you own,
+  keep the extension's allow-list small, and remember that automated access with your account may
+  violate a site's terms and could get the account restricted.
+- **Transcripts, speaker labels, OCR and LLM output are machine-generated and can be wrong.**
+  Speaker diarization only assigns anonymous numbered labels and is not voice identification;
+  do not use it to identify people. Review important text before you rely on or quote it.
+- **Cloud features send data to third parties.** Online ASR uploads audio to your OSS bucket and
+  DashScope; cloud OCR uploads images; LLM clean-up sends transcript text to the provider you
+  configure. Do not enable them for confidential or personal data you are not allowed to share.
+- **Personal data in your library stays your responsibility.** Content you import may contain
+  other people's personal information; handle it according to the laws that apply to you
+  (for example GDPR or PIPL).
+- Generated read-aloud audio uses the Kokoro voices; do not present it as a real person's voice.
+
+## Development and tests
+
+```bash
+CARGO_BUILD_JOBS=2 bash scripts/verify.sh       # pytest, cargo fmt/clippy/test, typecheck, oxlint, vitest, build
+bash scripts/verify.sh --e2e                    # additionally runs Playwright
+```
+
+On Windows use `scripts\verify.ps1`. See [CONTRIBUTING.md](CONTRIBUTING.md) for the workflow and
+[docs/README.md](docs/README.md) for the documentation map (most design documents are in Chinese).
+
+## Project status
+
+The core import, reader, search and Windows packaging paths are covered by unit and integration
+tests. Site adapters depend on third-party page structures and can break when those sites change.
+The project is versioned 0.1.0 and has no stability guarantees yet.
+
+## License
+
+Echo Reader is released under the [MIT License](LICENSE).
+
+Third-party components keep their own licenses; see
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). Notably:
+
+- **eSpeak NG and `phonemizer-fork` are GPL-3.0.** They are pulled in only by the optional
+  `tts` extra (`kokoro-onnx` → `espeakng-loader`, which bundles eSpeak NG, and `phonemizer-fork`).
+  They are **optional dependencies that you install yourself**; this project does **not**
+  distribute them. They are not in this repository, not in our wheels or sdists, and not in the
+  Windows installer, standalone bundle or any other bundle or sidecar — the Windows build
+  excludes them explicitly and fails if they appear. If you redistribute an environment that
+  includes them, the GPL-3.0 applies to that distribution;
+- the Windows bundle ships an FFmpeg **GPLv3** build, so redistributing the bundle carries GPL
+  source-offer obligations;
+- model weights (Whisper, Kokoro-82M, Fun-ASR-Nano, PP-OCR) are downloaded at runtime and are
+  licensed by their authors (Apache-2.0 / MIT).

@@ -75,5 +75,8 @@ standalone zip 是免安装程序束，但仍按安装模式使用 Documents/LOC
 把用户数据放在解压目录的 portable app。installer 在此程序束上增加每用户安装、快捷方式和
 升级替换。
 
-两种形式当前都只能私人本机验证。组合项目无仓库级许可证，包内 FFmpeg 构建带 GPL 义务；
-未完成项目许可与依赖分发合规前，不得公开再分发。
+源码以 MIT 许可证发布（见根目录 `LICENSE`）。二进制程序束另含第三方组件：BtbN FFmpeg
+GPLv3 构建、PyInstaller 引导程序（GPLv2+ 带打包例外）、Deno（MIT）以及 OpenVINO / sherpa-onnx
+等。公开分发 installer 或 standalone zip 前，必须随包提供这些组件的许可证原文，并履行 FFmpeg
+GPLv3 的源码提供义务（例如在发布页附上所用 FFmpeg 构建的源码或书面获取方式）。详见
+`THIRD_PARTY_NOTICES.md`。

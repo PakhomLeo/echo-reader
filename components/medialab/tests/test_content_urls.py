@@ -17,7 +17,7 @@ def test_sanitize_persisted_url_handles_signed_cdn_keys_case_insensitively():
 
 def test_sanitize_persisted_url_scrubs_userinfo_poc_token_and_nested_urls():
     value = sanitize_persisted_url(
-        "https://user:password@example.test/open?poc_token=secret&next="
+        "https://user:password@example.test/open?poc_token=secret&next="  # trufflehog:ignore (test fixture)
         "https%3A%2F%2Ftarget.test%2Fwatch%3Fid%3D7%26xsec_token%3Dnested"
     )
     assert value == (

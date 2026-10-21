@@ -16,6 +16,8 @@ from echo_reader.import_store import ImportStore, SCHEMA_VERSION, SchemaVersionE
 from echo_reader.server import create_app
 from echo_reader.server import ImportService
 
+LOOPBACK = "http://127.0.0.1:3100"
+
 
 LEGACY_SCHEMA = """
 CREATE TABLE batches (
@@ -153,13 +155,13 @@ def test_library_switch_persists_and_restart_uses_new_root(tmp_path: Path) -> No
     factory = lambda paths: SwitchCoordinator(paths, calls)
     app = create_app(library_root=first, runtime_root=runtime, config_root=config,
                      coordinator_factory=factory, bridge=None)
-    with TestClient(app) as client:
+    with TestClient(app, base_url=LOOPBACK) as client:
         response = client.post("/api/v1/library/switch", json={"path": str(second)})
         assert response.status_code == 200
         assert client.get("/api/v1/app-config").json()["library_root"] == str(second.resolve())
     restarted = create_app(runtime_root=runtime, config_root=config,
                            coordinator_factory=factory, bridge=None)
-    with TestClient(restarted) as client:
+    with TestClient(restarted, base_url=LOOPBACK) as client:
         assert client.get("/api/v1/health").json()["content_root"] == str(second.resolve())
 
 
@@ -205,7 +207,7 @@ def test_library_switch_rejects_control_root_overlap_and_filesystem_root(tmp_pat
     calls: list[tuple[str, str]] = []
     app = create_app(library_root=current, runtime_root=runtime, config_root=config,
                      coordinator_factory=lambda paths: SwitchCoordinator(paths, calls), bridge=None)
-    with TestClient(app) as client:
+    with TestClient(app, base_url=LOOPBACK) as client:
         nested = runtime / "nested-library"
         nested.mkdir()
         candidates = (runtime, nested, tmp_path, Path(tmp_path.anchor))
@@ -225,7 +227,7 @@ def test_library_switch_validates_writable_without_probe_residue(
     app = create_app(library_root=current, runtime_root=tmp_path / "runtime",
                      config_root=tmp_path / "config",
                      coordinator_factory=lambda paths: SwitchCoordinator(paths, calls), bridge=None)
-    with TestClient(app) as client:
+    with TestClient(app, base_url=LOOPBACK) as client:
         response = client.post("/api/v1/library/switch", json={"path": str(candidate)})
         assert response.status_code == 200
     assert not list(candidate.glob(".echo-reader-write-test-*"))
@@ -239,7 +241,7 @@ def test_library_switch_validates_writable_without_probe_residue(
     app = create_app(library_root=candidate, runtime_root=tmp_path / "runtime-2",
                      config_root=tmp_path / "config-2",
                      coordinator_factory=lambda paths: SwitchCoordinator(paths, calls), bridge=None)
-    with TestClient(app) as client:
+    with TestClient(app, base_url=LOOPBACK) as client:
         response = client.post("/api/v1/library/switch", json={"path": str(blocked)})
         assert response.status_code == 422
         assert response.json()["detail"] == {
@@ -257,7 +259,7 @@ def test_library_switch_rolls_echo_and_config_back_on_persist_failure(
                      config_root=tmp_path / "config",
                      coordinator_factory=lambda paths: SwitchCoordinator(paths, calls), bridge=None)
     monkeypatch.setattr(AppPaths, "persist", lambda self: (_ for _ in ()).throw(OSError("disk full")))
-    with TestClient(app) as client:
+    with TestClient(app, base_url=LOOPBACK) as client:
         response = client.post("/api/v1/library/switch", json={"path": str(second)})
         assert response.status_code == 502
         assert client.get("/api/v1/health").json()["content_root"] == str(first.resolve())

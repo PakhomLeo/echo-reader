@@ -1,4 +1,4 @@
-//! Text helpers for the full-text index (ported from the standalone Echo search engine).
+//! Text helpers for the SQLite FTS5 full-text index.
 //!
 //! FTS5's `unicode61` tokenizer keeps a run of CJK characters as one token, so the index
 //! also stores CJK uni/bi/trigrams in a dedicated `terms` column and queries are rewritten

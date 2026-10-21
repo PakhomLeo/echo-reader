@@ -7,6 +7,8 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
+
 from fastapi.testclient import TestClient
 
 from echo_reader.desktop import (
@@ -17,6 +19,8 @@ from echo_reader.desktop import (
     _reserve_loopback_socket,
 )
 from echo_reader.server import create_app
+
+LOOPBACK = "http://127.0.0.1:3100"
 
 
 class Coordinator:
@@ -171,7 +175,7 @@ def test_development_service_has_no_process_shutdown_endpoint(tmp_path: Path):
         bridge=None,
         shutdown_callback=lambda: None,
     )
-    with TestClient(app) as client:
+    with TestClient(app, base_url=LOOPBACK) as client:
         assert client.post("/api/v1/app/shutdown").status_code == 404
 
 
@@ -245,3 +249,38 @@ def test_migration_refuses_to_succeed_while_an_instance_is_running(tmp_path: Pat
     open_existing.assert_not_called()
     show_error.assert_called_once()
     assert "迁移前" in show_error.call_args.args[0]
+
+
+def test_development_service_enforces_loopback_browser_boundary(tmp_path: Path):
+    """Without the install token the service still rejects DNS rebinding and cross-site writes."""
+    coordinator = Coordinator()
+    app = create_app(
+        library_root=tmp_path / "library",
+        runtime_root=tmp_path / "runtime",
+        install_mode=False,
+        coordinator_factory=lambda _paths: coordinator,
+        bridge=None,
+    )
+    with TestClient(app, base_url=LOOPBACK) as client:
+        assert client.get("/api/v1/health").status_code == 200
+        assert client.get("/api/v1/health", headers={"Host": "rebind.attacker.test:3100"}).status_code == 421
+        cross_site = client.post(
+            "/api/v1/import-batches",
+            json={"urls": ["https://example.test/a"]},
+            headers={"Origin": "http://attacker.test", "Sec-Fetch-Site": "cross-site"},
+        )
+        assert cross_site.status_code == 403
+        foreign_origin = client.post(
+            "/api/v1/library/switch",
+            json={"path": str(tmp_path / "other")},
+            headers={"Origin": "http://127.0.0.1:5999"},
+        )
+        assert foreign_origin.status_code == 403
+
+
+def test_service_cli_refuses_non_loopback_bind():
+    from echo_reader.server import main
+
+    with pytest.raises(SystemExit) as exc:
+        main(["--host", "0.0.0.0"])
+    assert exc.value.code == 2

@@ -120,10 +120,13 @@ diarization_min_duration_off = 0.5
 
 [local_asr.funasr]
 # 仅 engine = "funasr_nano" 时生效。模型由 FunASR 下载到用户模型缓存，不写入仓库或资料库。
-# Fun-ASR-Nano 的模型代码随权重发布，需要 trust_remote_code = true 才能加载；
-# 关闭后该模型无法加载。
+# FunASR >= 1.4 已内置 Fun-ASR-Nano 模型类，默认不执行模型仓库中的 Python 代码。
+# trust_remote_code = true 会让 FunASR 安装模型仓库的 requirements.txt 并导入远程代码，
+# 等同于执行第三方程序；只在你审阅过模型仓库、确有需要时手动开启。
+# model_revision 可固定模型仓库的提交（例如 Hugging Face commit SHA），留空表示跟随默认分支。
 model = "FunAudioLLM/Fun-ASR-Nano-2512"
-trust_remote_code = true
+model_revision = ""
+trust_remote_code = false
 hub = "hf"
 auxiliary_hub = "ms"
 vad_model = "fsmn-vad"

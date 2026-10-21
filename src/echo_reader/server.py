@@ -621,21 +621,23 @@ def create_app(*, library_root: str | Path | None = None,
     app.state.credential_broker = None
 
     @app.middleware("http")
-    async def installed_browser_boundary(request: Request, call_next: Callable[..., Any]):
+    async def loopback_browser_boundary(request: Request, call_next: Callable[..., Any]):
+        # Applies in every mode: a loopback listener alone does not stop DNS rebinding
+        # (attacker-controlled Host) or cross-site form/fetch POSTs from a browser.
+        authority = _loopback_authority(request.headers.get("host", ""))
+        if authority is None:
+            return JSONResponse(status_code=421, content={"detail": "Host must be a loopback address"})
+        if request.method not in {"GET", "HEAD"}:
+            if request.headers.get("sec-fetch-site", "").casefold() == "cross-site":
+                return JSONResponse(
+                    status_code=403, content={"detail": "Cross-site requests are not allowed"}
+                )
+            origin = request.headers.get("origin")
+            if origin is not None and not _same_loopback_origin(origin, authority):
+                return JSONResponse(
+                    status_code=403, content={"detail": "Origin does not match Host"}
+                )
         if imports.paths.install_mode:
-            authority = _loopback_authority(request.headers.get("host", ""))
-            if authority is None:
-                return JSONResponse(status_code=421, content={"detail": "Host must be a loopback address"})
-            if request.method not in {"GET", "HEAD"}:
-                if request.headers.get("sec-fetch-site", "").casefold() == "cross-site":
-                    return JSONResponse(
-                        status_code=403, content={"detail": "Cross-site requests are not allowed"}
-                    )
-                origin = request.headers.get("origin")
-                if origin is not None and not _same_loopback_origin(origin, authority):
-                    return JSONResponse(
-                        status_code=403, content={"detail": "Origin does not match Host"}
-                    )
             provided_token = request.headers.get("x-echo-internal-token", "")
             if not secrets.compare_digest(provided_token, service_internal_token or ""):
                 return JSONResponse(
@@ -817,8 +819,22 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _is_loopback_bind(host: str) -> bool:
+    if host.casefold() == "localhost":
+        return True
+    try:
+        return ipaddress.ip_address(host.strip("[]")).is_loopback
+    except ValueError:
+        return False
+
+
 def main(argv: Sequence[str] | None = None) -> int:
-    args = build_parser().parse_args(argv)
+    parser = build_parser()
+    args = parser.parse_args(argv)
+    if not _is_loopback_bind(args.host):
+        # The service is a single-user local control plane; development mode has no
+        # network authentication, so it must never listen on a routable interface.
+        parser.error("--host must be a loopback address (127.0.0.1, ::1 or localhost)")
     uvicorn.run(create_app(
         library_root=args.library_root, runtime_root=args.runtime_root,
         state_root=args.state_root, cache_root=args.cache_root, logs_root=args.logs_root,

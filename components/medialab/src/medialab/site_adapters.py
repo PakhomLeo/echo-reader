@@ -646,7 +646,7 @@ class XhsAdapter(SiteAdapter):
 
 # ---------------------------------------------------------------------------
 # 微博（移动端 $render_data / 桌面端 hydration / 头条文章 / DOM 兜底）
-# 来源：移植自 UP（Unified Processor）的微博提取器，改写为 lxml + SiteAdapter 契约。
+# 微博文章提取器：基于 lxml，实现 SiteAdapter 契约。
 # ---------------------------------------------------------------------------
 
 _WEIBO_STATE_PATTERNS = (

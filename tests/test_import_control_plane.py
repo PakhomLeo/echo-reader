@@ -12,6 +12,8 @@ from echo_reader.app_config import AppPaths
 from echo_reader.import_store import ImportStore, sanitize_payload
 from echo_reader.server import ImportService, _content_fingerprint, create_app
 
+LOOPBACK = "http://127.0.0.1:3100"
+
 
 class FakeCoordinator:
     def __init__(self, *, index_error: bool = False):
@@ -57,7 +59,7 @@ def test_atomic_batch_validation_paging_sanitization_and_lifecycle(tmp_path: Pat
     coordinator = FakeCoordinator()
     app = create_app(library_root=tmp_path / "library", runtime_root=tmp_path / "runtime",
                      coordinator_factory=lambda paths: coordinator, bridge=None)
-    with TestClient(app) as client:
+    with TestClient(app, base_url=LOOPBACK) as client:
         assert client.post("/api/v1/import-batches", json={"urls": []}).status_code == 422
         assert client.post("/api/v1/import-batches", json={"urls": [f"https://x.test/{i}" for i in range(51)]}).status_code == 422
         assert client.get("/api/v1/import-jobs").json()["total"] == 0
@@ -88,7 +90,7 @@ def test_capability_rejection_is_atomic_and_pending_index_retry_only_rescans(tmp
     coordinator = FakeCoordinator(index_error=True)
     app = create_app(library_root=tmp_path / "library", runtime_root=tmp_path / "runtime",
                      coordinator_factory=lambda paths: coordinator, bridge=None)
-    with TestClient(app) as client:
+    with TestClient(app, base_url=LOOPBACK) as client:
         rejected = client.post("/api/v1/import-batches", json={
             "urls": ["https://x.test/a", "https://x.test/b"],
             "mode": "transcribe", "asr_backend": "local",
@@ -109,7 +111,7 @@ def test_exact_frontend_batch_contract_and_response(tmp_path: Path):
             "audio_format": "mp3", "speed_factor": 1, "timeout": 1800,
             "asr_backend": "auto", "local_timestamp_mode": "vad",
             "local_diarization": True, "local_speaker_count": 0}
-    with TestClient(app) as client:
+    with TestClient(app, base_url=LOOPBACK) as client:
         response = client.post("/api/v1/import-batches", json=body)
         assert response.status_code == 202
         job = wait_for(client, response.json()["items"][0]["id"], "succeeded")
@@ -188,7 +190,7 @@ def test_local_auto_normalization_quality_error_and_raw_retry(tmp_path: Path):
     coordinator = LocalCoordinator()
     app = create_app(library_root=tmp_path / "library", runtime_root=tmp_path / "runtime",
                      coordinator_factory=lambda paths: coordinator, bridge=None)
-    with TestClient(app) as client:
+    with TestClient(app, base_url=LOOPBACK) as client:
         capabilities = client.get("/api/v1/import-capabilities").json()
         assert capabilities["backends"]["local"] == {
             "available": True, "readiness": "download_required",
@@ -270,7 +272,7 @@ def test_pending_index_only_reindexes_and_batch_retry_failed_skips_it(tmp_path: 
     coordinator = OutputCoordinator(index_error=True)
     app = create_app(library_root=tmp_path / "library", runtime_root=tmp_path / "runtime",
                      coordinator_factory=lambda paths: coordinator, bridge=None)
-    with TestClient(app) as client:
+    with TestClient(app, base_url=LOOPBACK) as client:
         batch = client.post("/api/v1/import-batches", json={"urls": ["https://x.test/a"]}).json()
         job_id = batch["items"][0]["id"]
         deadline = time.monotonic() + 3
@@ -321,7 +323,7 @@ def test_duplicate_warning_path_containment_and_single_origin_boundary(tmp_path:
     coordinator = OutputCoordinator()
     app = create_app(library_root=library, runtime_root=tmp_path / "runtime",
                      coordinator_factory=lambda paths: coordinator, bridge=None)
-    with TestClient(app) as client:
+    with TestClient(app, base_url=LOOPBACK) as client:
         response = client.options("/api/v1/import-batches", headers={
             "Origin": "http://127.0.0.1:5173", "Access-Control-Request-Method": "POST"
         })
@@ -362,7 +364,7 @@ def test_three_dispatchers_bound_overlap_and_api_stays_responsive(tmp_path: Path
     coordinator = BlockingCoordinator()
     app = create_app(library_root=tmp_path / "library", runtime_root=tmp_path / "runtime",
                      coordinator_factory=lambda paths: coordinator, bridge=None)
-    with TestClient(app) as client:
+    with TestClient(app, base_url=LOOPBACK) as client:
         created = client.post("/api/v1/import-batches", json={
             "urls": [f"https://x.test/{i}" for i in range(4)]
         }).json()
@@ -400,7 +402,7 @@ def test_persistence_sanitizes_embedded_urls_and_exception_chains(tmp_path: Path
 
     app = create_app(library_root=tmp_path / "library", runtime_root=tmp_path / "runtime",
                      coordinator_factory=lambda paths: FailingCoordinator(), bridge=None)
-    with TestClient(app) as client:
+    with TestClient(app, base_url=LOOPBACK) as client:
         created = client.post("/api/v1/import-batches", json={"urls": ["https://x.test/a"]}).json()
         failed = wait_for(client, created["items"][0]["id"], "failed")
         serialized = str(failed["error"])
@@ -444,7 +446,7 @@ def test_index_health_failure_is_async_and_sanitized(tmp_path: Path):
 
     app = create_app(library_root=tmp_path / "library", runtime_root=tmp_path / "runtime",
                      coordinator_factory=lambda paths: UnhealthyCoordinator(), bridge=None)
-    with TestClient(app) as client:
+    with TestClient(app, base_url=LOOPBACK) as client:
         deadline = time.monotonic() + 2
         indexing = None
         while time.monotonic() < deadline:

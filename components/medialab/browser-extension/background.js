@@ -412,9 +412,32 @@ async function mintYouTubeSession(videoUrl) {
   return { ok: true, ...minted };
 }
 
+const YOUTUBE_MINT_HOSTS = new Set(["www.youtube.com", "youtube.com", "m.youtube.com", "music.youtube.com", "youtu.be"]);
+
+// Only ever open YouTube watch pages for minting; never an arbitrary URL supplied over the bridge.
+function youtubeMintUrl(videoUrl, videoId) {
+  if (videoUrl) {
+    try {
+      const parsed = new URL(videoUrl);
+      if (parsed.protocol === "https:" && YOUTUBE_MINT_HOSTS.has(parsed.hostname)
+          && !parsed.username && !parsed.password) {
+        return parsed.href;
+      }
+    } catch (e) {
+      return null;
+    }
+    return null;
+  }
+  return /^[A-Za-z0-9_-]{11}$/.test(videoId || "")
+    ? `https://www.youtube.com/watch?v=${videoId}`
+    : null;
+}
+
 async function handleMint(msg) {
   const { video_url, video_id, client } = msg;
-  const session = await mintYouTubeSession(video_url || `https://www.youtube.com/watch?v=${video_id}`);
+  const mintUrl = youtubeMintUrl(video_url, video_id);
+  if (!mintUrl) return { ok: false, error: "invalid_mint_target" };
+  const session = await mintYouTubeSession(mintUrl);
   if (!session.ok) return session;
   return {
     ok: true,

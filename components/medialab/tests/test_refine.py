@@ -171,7 +171,7 @@ if __name__ == "__main__":
 
 
 class TestBuildRefiner(unittest.TestCase):
-    """Provider selection ported from UP's OpenAI-compatible / Ollama provider layer."""
+    """Provider selection for the OpenAI-compatible / Ollama provider layer."""
 
     def _cfg(self, **refine):
         from medialab.config import load_config

@@ -40,8 +40,9 @@ session 自动失效。由于浏览器扩展桥固定使用 19876，同一台 Wi
 迁移只复制资料库、配置、两个 SQLite 数据库和本地模型；不会复制测试运行、构建输出、日志、临时
 Cookie 或 OpenVINO 编译缓存，也不会修改或删除源目录。冲突会明确失败，不会覆盖不同内容。
 
-## 许可边界
+## 许可
 
-本安装包当前只用于私人、本机验证。组合项目尚未选择仓库级许可证，并且包内 FFmpeg 构建带 GPL
-义务；不要把安装包或 standalone zip 公开分发。依赖声明与许可证原文见 `THIRD_PARTY_NOTICES.md`
-和 `licenses\`。
+Echo Reader 源码以 MIT 许可证发布，许可证原文见 `LICENSE.txt`。程序束中的第三方组件
+（FFmpeg GPLv3 构建、PyInstaller 引导程序、Deno、OpenVINO、sherpa-onnx 等）保留各自许可证，
+声明与原文见 `THIRD_PARTY_NOTICES.md` 和 `licenses\`。再分发本程序束时须一并提供这些文件，
+并履行 FFmpeg GPLv3 的源码提供义务。

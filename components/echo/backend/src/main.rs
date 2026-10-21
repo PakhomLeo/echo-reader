@@ -112,6 +112,14 @@ fn bind_listener(bind_address: &str) -> std::io::Result<tokio::net::TcpListener>
         .to_socket_addrs()?
         .next()
         .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::InvalidInput, "监听地址为空"))?;
+    // The API has no network authentication in development mode and is designed for a
+    // single local user: refuse to listen on anything other than a loopback address.
+    if !address.ip().is_loopback() {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "ECHO_BIND 只能是 loopback 地址（127.0.0.1 / ::1）",
+        ));
+    }
     let socket = socket2::Socket::new(
         socket2::Domain::for_address(address),
         socket2::Type::STREAM,
@@ -216,6 +224,12 @@ mod tests {
             "127.0.0.1".parse::<std::net::IpAddr>().unwrap()
         );
         assert_ne!(address.port(), 0);
+    }
+
+    #[tokio::test]
+    async fn listener_rejects_non_loopback_addresses() {
+        let error = bind_listener("0.0.0.0:0").expect_err("wildcard bind must be rejected");
+        assert_eq!(error.kind(), std::io::ErrorKind::InvalidInput);
     }
 
     #[cfg(windows)]

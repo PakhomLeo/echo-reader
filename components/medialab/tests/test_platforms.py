@@ -6,11 +6,11 @@ from medialab.platforms import allowed_extractors, detect_platform, session_doma
 class TestPlatforms(unittest.TestCase):
     def test_detect(self):
         cases = {
-            "https://www.bilibili.com/video/BV1qH3Q6uEvY/": "bilibili",
+            "https://www.bilibili.com/video/BV1A0000000A/": "bilibili",
             "https://b23.tv/abc": "bilibili",
-            "https://v.douyin.com/Zjm3O9_nZq8/": "douyin",
+            "https://v.douyin.com/AbCdEf12345/": "douyin",
             "https://www.douyin.com/video/123": "douyin",
-            "https://youtu.be/1L_o7YJc3D0": "youtube",
+            "https://youtu.be/aaaaaaaaaaa": "youtube",
             "https://www.youtube.com/watch?v=abc": "youtube",
             "https://x.com/user/status/1": "x",
             "https://www.tiktok.com/@user/video/1": "tiktok",

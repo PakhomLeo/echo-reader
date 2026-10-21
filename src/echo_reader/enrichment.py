@@ -33,6 +33,7 @@ _REASONS = {
     "model_missing": "未下载模型文件",
     "cloud_not_allowed": "未允许使用云端 OCR（[ocr] allow_cloud）",
     "missing_endpoint": "未配置 OCR 服务地址",
+    "insecure_endpoint": "OCR 服务地址必须使用 https://",
     "missing_token": "未配置 OCR 服务 token",
 }
 _INSTALL_HINTS = {
@@ -58,6 +59,16 @@ def _atomic_write_json(path: Path, value: Any) -> None:
     except BaseException:
         Path(temp).unlink(missing_ok=True)
         raise
+
+
+def _contained(folder: Path, relative: str) -> Path | None:
+    """Resolve ``relative`` inside ``folder``; ``None`` if it escapes (``..``, absolute, symlink)."""
+    root = folder.resolve()
+    try:
+        candidate = (root / relative).resolve()
+    except (OSError, ValueError):
+        return None
+    return candidate if candidate.is_relative_to(root) and candidate != root else None
 
 
 class EnrichmentService:
@@ -180,8 +191,8 @@ class EnrichmentService:
         from medialab import tts
 
         manifest = self._manifest(folder)
-        article = folder / ((manifest.get("article") or {}).get("path") or "article.md")
-        markdown = article.read_text(encoding="utf-8") if article.is_file() else ""
+        article = _contained(folder, str((manifest.get("article") or {}).get("path") or "article.md"))
+        markdown = article.read_text(encoding="utf-8") if article is not None and article.is_file() else ""
         text = tts.markdown_to_speech_text(markdown)
         if not text:
             raise ValueError("文章没有可朗读的文字")

@@ -96,3 +96,7 @@ cargo build
 - [API 契约](docs/api.md)
 - [资料库文件格式](docs/file-format.md)
 - [历史项目计划书](PROJECT_PLAN.md)：原 standalone Echo 的冻结需求与阶段计划
+
+## License
+
+MIT – see [LICENSE](LICENSE). Third-party notices: [THIRD_PARTY_NOTICES.md](../../THIRD_PARTY_NOTICES.md).

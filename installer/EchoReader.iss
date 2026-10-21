@@ -13,6 +13,8 @@ AppId={{F22E6C98-37C1-4CE1-90C6-35E9D349F86D}
 AppName=Echo Reader
 AppVersion={#AppVersion}
 AppPublisher=Echo Reader contributors
+AppCopyright=Copyright (c) 2026 Echo Reader contributors. Released under the MIT License.
+LicenseFile={#BundleDir}\LICENSE.txt
 DefaultDirName={localappdata}\Programs\Echo Reader
 DefaultGroupName=Echo Reader
 DisableProgramGroupPage=yes
@@ -41,6 +43,7 @@ Type: files; Name: "{app}\echo-backend.exe"
 Type: files; Name: "{app}\README.md"
 Type: files; Name: "{app}\DEVELOPMENT.md"
 Type: files; Name: "{app}\THIRD_PARTY_NOTICES.md"
+Type: files; Name: "{app}\LICENSE.txt"
 Type: files; Name: "{app}\bundle-manifest.json"
 
 [Files]

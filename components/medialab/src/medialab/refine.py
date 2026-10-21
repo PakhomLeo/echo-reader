@@ -13,7 +13,7 @@
 - ``ollama``：本机 Ollama 的 ``/v1`` 兼容端点，无需密钥。
 
 后端选择由 :func:`build_refiner` 根据 ``[refine].provider`` 决定（OpenAI 兼容 / Ollama 接入
-移植自 UP 的 Provider 抽象）。超长输入按行分批（max_input_chars）逐批润色后合并。
+Provider 抽象）。超长输入按行分批（max_input_chars）逐批润色后合并。
 """
 
 from __future__ import annotations

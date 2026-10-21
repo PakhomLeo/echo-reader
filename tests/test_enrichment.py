@@ -13,6 +13,8 @@ from fastapi.testclient import TestClient
 from echo_reader.server import create_app
 from test_import_control_plane import FakeCoordinator
 
+LOOPBACK = "http://127.0.0.1:3100"
+
 
 class RescanCounter(FakeCoordinator):
     def __init__(self):
@@ -69,7 +71,7 @@ def test_features_disabled_without_optional_dependencies(env, monkeypatch):
     make_item(library)
     monkeypatch.setattr("medialab.tts.missing_modules", lambda: ["kokoro_onnx"])
     monkeypatch.setattr("medialab.ocr._rapidocr_installed", lambda: False)
-    with TestClient(app) as client:
+    with TestClient(app, base_url=LOOPBACK) as client:
         features = client.get("/api/v1/import-capabilities").json()["features"]
         assert features["tts"]["available"] is False
         assert features["tts"]["reason"] == "dependencies_missing"
@@ -89,7 +91,7 @@ def test_features_disabled_without_optional_dependencies(env, monkeypatch):
 def test_tts_reports_missing_model_files(env, monkeypatch):
     app, library, _ = env
     monkeypatch.setattr("medialab.tts.missing_modules", lambda: [])
-    with TestClient(app) as client:
+    with TestClient(app, base_url=LOOPBACK) as client:
         tts = client.get("/api/v1/features").json()["tts"]
     assert tts == {"available": False, "reason": "model_missing", "engine": "kokoro",
                    "message": tts["message"]}
@@ -111,7 +113,7 @@ def test_tts_writes_attachment_and_rescans(env, monkeypatch):
         return {"duration_ms": 100, "voice": voice or "zf_xiaoxiao", "language": "cmn", "truncated": False}
 
     monkeypatch.setattr("medialab.tts.synthesize", fake_synthesize)
-    with TestClient(app) as client:
+    with TestClient(app, base_url=LOOPBACK) as client:
         assert client.post("/api/v1/items/missing/tts").status_code == 404
         assert client.post("/api/v1/items/item-1/tts", json={"voice": "../x"}).status_code == 422
         started = client.post("/api/v1/items/item-1/tts", json={"speed": 1.1})
@@ -143,7 +145,7 @@ def test_ocr_writes_sidecar_and_records_per_image_errors(env, monkeypatch):
         return {"text": "识别出的文字", "confidence": 0.9}
 
     monkeypatch.setattr("medialab.ocr.recognize_image", fake_recognize)
-    with TestClient(app) as client:
+    with TestClient(app, base_url=LOOPBACK) as client:
         job = wait_job(client, client.post("/api/v1/items/item-1/ocr").json()["id"])
     assert job["status"] == "succeeded", job
     assert job["result"] == {"path": "ocr.json", "engine": "rapidocr", "images": 2, "recognized": 1,
@@ -159,7 +161,23 @@ def test_ocr_without_images_fails_cleanly(env, monkeypatch):
     app, library, _ = env
     make_item(library, with_image=False)
     monkeypatch.setattr("medialab.ocr.resolve_engine", lambda cfg: ("rapidocr", None))
-    with TestClient(app) as client:
+    with TestClient(app, base_url=LOOPBACK) as client:
         job = wait_job(client, client.post("/api/v1/items/item-1/ocr").json()["id"])
         assert job["status"] == "failed" and "没有可识别的图片" in job["error"]
         assert client.get("/api/v1/enrichment-jobs/nope").status_code == 404
+
+
+def test_article_path_cannot_escape_the_item_folder(tmp_path: Path):
+    from echo_reader.enrichment import _contained
+
+    folder = tmp_path / "library" / "item"
+    folder.mkdir(parents=True)
+    (folder / "article.md").write_text("ok", encoding="utf-8")
+    secret = tmp_path / "secret.txt"
+    secret.write_text("private", encoding="utf-8")
+    (folder / "link.md").symlink_to(secret)
+    assert _contained(folder, "article.md") == (folder / "article.md").resolve()
+    assert _contained(folder, "../../secret.txt") is None
+    assert _contained(folder, str(secret)) is None
+    assert _contained(folder, "link.md") is None
+    assert _contained(folder, ".") is None

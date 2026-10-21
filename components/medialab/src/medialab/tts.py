@@ -1,4 +1,4 @@
-"""Optional offline text-to-speech with Kokoro (kokoro-onnx), ported from Echo.
+"""Optional offline text-to-speech with Kokoro (kokoro-onnx).
 
 Install with the ``tts`` extra and download the two model files (not shipped in git)::
 
@@ -27,6 +27,13 @@ MODEL_URLS = {
     VOICES_FILE: "https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/voices-v1.0.bin",
 }
 MODEL_MIN_BYTES = {MODEL_FILE: 300_000_000, VOICES_FILE: 5_000_000}
+# SHA-256 of the release assets above. The upstream release does not publish digests, so
+# these were recorded from the files downloaded on 2026-10-21 (trust on first use) and
+# pin that exact content: a replaced release asset fails verification instead of loading.
+MODEL_SHA256 = {
+    MODEL_FILE: "7d5df8ecf7d4b1878015a32686053fd0eebe2bc377234608764cc0ef3636a6c5",
+    VOICES_FILE: "bca610b8308e8d99f32e6fe4197e7ec01679264efed0cac9140fe9c29f1fbf7d",
+}
 MODELS_ENV = "ECHO_TTS_MODELS_PATH"
 DEFAULT_MODEL_DIR = ".runtime/models/kokoro"
 MAX_TEXT_CHARS = 20_000
