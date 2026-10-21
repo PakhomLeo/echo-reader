@@ -5,7 +5,10 @@
   "updated_at": "2026-08-06T19:00:00+08:00",
   "source": {
     "type": "article",
-    "url": "https://example.com/notes"
+    "url": "https://example.com/notes",
+    "title": "纯文章示例：没有媒体和转写",
+    "author": "Echo Reader 示例",
+    "published_at": "2026-08-02T08:00:00+08:00"
   },
   "article": {
     "path": "article.md",

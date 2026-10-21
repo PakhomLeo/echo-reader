@@ -254,3 +254,54 @@ class TestLoadManifestId(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestH264EncoderSelection(unittest.TestCase):
+    """桌面程序束随附 FFmpeg LGPL 构建（无 libx264），转码必须能退到 LGPL 可用的编码器。"""
+
+    LGPL_ENCODERS = (
+        "Encoders:\n"
+        " V....D libopenh264          OpenH264 H.264 / AVC (codec h264)\n"
+        " V....D h264_mf              H264 via MediaFoundation (codec h264)\n"
+        " A....D aac                  AAC (Advanced Audio Coding)\n"
+    )
+    GPL_ENCODERS = " V....D libx264              libx264 H.264 (codec h264)\n" + LGPL_ENCODERS
+
+    def setUp(self):
+        from medialab import publishing
+        publishing._available_encoders.cache_clear()
+        self.addCleanup(publishing._available_encoders.cache_clear)
+        self.publishing = publishing
+
+    def _args(self, listing):
+        done = mock.Mock(stdout=listing, returncode=0)
+        with mock.patch("medialab.publishing.subprocess.run", return_value=done):
+            return self.publishing._h264_encoder_args("ffmpeg-test")
+
+    def test_lgpl_build_uses_openh264(self):
+        args = self._args(self.LGPL_ENCODERS)
+        self.assertEqual(args[:2], ["-c:v", "libopenh264"])
+        self.assertNotIn("libx264", args)
+
+    def test_user_ffmpeg_with_x264_prefers_it(self):
+        self.assertEqual(self._args(self.GPL_ENCODERS)[:2], ["-c:v", "libx264"])
+
+    def test_audio_encoder_names_are_not_mistaken_for_video(self):
+        with self.assertRaisesRegex(RuntimeError, "H.264"):
+            self._args(" A....D aac  AAC\n A....D libopenh264x fake\n")
+
+    def test_transcode_command_uses_selected_encoder(self):
+        calls = []
+
+        def fake_run(cmd, **kwargs):
+            calls.append(cmd)
+            return mock.Mock(stdout=self.LGPL_ENCODERS, stderr="", returncode=0)
+
+        with tempfile.TemporaryDirectory() as tmp, \
+             mock.patch("medialab.publishing.subprocess.run", side_effect=fake_run):
+            src, dst = Path(tmp) / "in.mkv", Path(tmp) / "out.mp4"
+            self.publishing._transcode_media(src, dst, "ffmpeg-test", {"video_codec": "hevc"})
+        encode = calls[-1]
+        self.assertIn("libopenh264", encode)
+        self.assertNotIn("libx264", encode)
+        self.assertIn("aac", encode)

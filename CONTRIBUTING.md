@@ -5,7 +5,8 @@ adapters and tests are all welcome.
 
 ## Before you start
 
-- For anything larger than a small fix, open an issue first so we can agree on the approach.
+- For anything larger than a small fix, open an
+  [issue](https://github.com/PakhomLeo/echo-reader/issues) first so we can agree on the approach.
 - Security problems must **not** be reported in public issues; see [SECURITY.md](SECURITY.md).
 - By contributing you agree that your contribution is licensed under the [MIT License](LICENSE).
 

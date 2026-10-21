@@ -16,6 +16,11 @@ dependencies = [
     "uvicorn>=0.35,<1",
 ]
 
+[project.urls]
+Homepage = "https://github.com/PakhomLeo/echo-reader"
+Repository = "https://github.com/PakhomLeo/echo-reader"
+Issues = "https://github.com/PakhomLeo/echo-reader/issues"
+
 [project.scripts]
 echo-reader-import = "echo_reader.cli:main"
 echo-reader-service = "echo_reader.server:main"

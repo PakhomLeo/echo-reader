@@ -1,6 +1,7 @@
 # Third-party notices
 
-Echo Reader itself is licensed under the [MIT License](LICENSE). It depends on third-party
+echo-reader (https://github.com/PakhomLeo/echo-reader) is Copyright (c) 2026 PakhomLeo and contributors and is licensed under the
+[MIT License](LICENSE). It depends on third-party
 software and models that keep their own licenses. This file lists the notable ones; the
 lockfiles (`uv.lock`, `components/echo/backend/Cargo.lock`, `components/echo/frontend/bun.lock`)
 are the authoritative dependency lists, and the full license review with primary-source links
@@ -76,10 +77,30 @@ service's terms.
 
 The Windows bundle additionally ships:
 
-- **FFmpeg / FFprobe** – the pinned [BtbN FFmpeg](https://github.com/BtbN/FFmpeg-Builds) GPLv3
-  build declared in `mise.toml`. Its `LICENSE.txt` is copied into `licenses/`. Redistributing the
-  bundle requires meeting the GPLv3 obligations of FFmpeg and its enabled libraries, including
-  offering the corresponding source.
+- **FFmpeg / FFprobe** – an unmodified **LGPL-3.0-or-later** build from
+  [BtbN/FFmpeg-Builds](https://github.com/BtbN/FFmpeg-Builds), pinned in `mise.toml` by release
+  tag, asset name and SHA-256:
+  `ffmpeg-n8.1.2-34-g9b6c8969e0-win64-lgpl-shared-8.1.zip`
+  (`sha256:c222a490dde4e7059f45495deef6bfb98dbcacc2b43df5b607546252037aa95c`, release
+  [`autobuild-2026-07-31-14-10`](https://github.com/BtbN/FFmpeg-Builds/releases/tag/autobuild-2026-07-31-14-10)).
+  It is configured with `--enable-version3` and without `--enable-gpl` / `--enable-nonfree`, so it
+  contains no GPL-only components such as libx264 or libx265; H.264 is encoded with OpenH264
+  (BSD-2-Clause). The build script refuses any FFmpeg that reports `--enable-gpl`, `--enable-nonfree`
+  or a libx264/libx265 encoder.
+  - *License text*: FFmpeg's `LICENSE.txt` is copied to `licenses/FFMPEG_LICENSE.txt`.
+  - *Corresponding source*: FFmpeg commit
+    [`9b6c8969e0`](https://github.com/FFmpeg/FFmpeg/tree/9b6c8969e0) and the build scripts with every
+    pinned library version at
+    [BtbN/FFmpeg-Builds@autobuild-2026-07-31-14-10](https://github.com/BtbN/FFmpeg-Builds/tree/autobuild-2026-07-31-14-10);
+    releases that ship the bundle also attach the source archive. See
+    `licenses/FFMPEG_SOURCE.txt` in the bundle (`installer/licenses/FFMPEG_SOURCE.txt` here).
+  - *Replacing the libraries*: echo-reader does not link FFmpeg; it runs `ffmpeg.exe` / `ffprobe.exe`
+    as separate processes. The shared build ships the LGPL libraries as separate DLLs
+    (`avcodec-62.dll`, `avformat-62.dll`, `avutil-60.dll`, …) in `tools\`; you may replace them, or
+    the executables, with your own build of the same major version.
+  - When you run from source, FFmpeg comes from your own installation (or `mise install`); any
+    build works, and the code uses libx264 if your FFmpeg has it, otherwise OpenH264 or Media
+    Foundation.
 - **Deno** – MIT, copied to `licenses/DENO_LICENSE.txt`.
 - **PyInstaller bootloader** – GPL-2.0-or-later with the bootloader exception; license texts are
   copied to `licenses/`.

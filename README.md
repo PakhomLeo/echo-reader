@@ -2,6 +2,11 @@
 
 **English** | [简体中文](README.zh-CN.md)
 
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Python 3.12](https://img.shields.io/badge/python-3.12-3776AB.svg)](pyproject.toml)
+[![Rust 2024](https://img.shields.io/badge/rust-2024_edition-orange.svg)](components/echo/backend/Cargo.toml)
+[![GitHub](https://img.shields.io/badge/GitHub-PakhomLeo%2Fecho--reader-181717.svg?logo=github)](https://github.com/PakhomLeo/echo-reader)
+
 Echo Reader is a local-first reading app for web content. Paste links to articles, posts,
 podcasts or videos; it saves them as plain files on your disk (Markdown article, images,
 media, time-coded transcript) and gives you a fast reader with full-text search, a
@@ -10,6 +15,9 @@ synchronized transcript player, a Markdown editor and optional read-aloud and OC
 Everything runs on your own machine. There is no account, no server and no telemetry.
 Cloud services (online speech recognition, LLM clean-up, cloud OCR) are optional and off
 until you configure them.
+
+Repository: <https://github.com/PakhomLeo/echo-reader>. This project (package name `echo-reader`)
+is not affiliated with other projects on GitHub or elsewhere that use the same or a similar name.
 
 ![Architecture](docs/assets/architecture.svg)
 
@@ -77,7 +85,7 @@ CPU; Fun-ASR-Nano runs on CPU, CUDA, Apple MPS or Intel XPU.
 ## Quick start (Linux / macOS)
 
 ```bash
-git clone <repository-url> echo-reader && cd echo-reader
+git clone https://github.com/PakhomLeo/echo-reader.git echo-reader && cd echo-reader
 uv sync                                   # Python workspace (add --extra local-asr etc. as needed)
 (cd components/echo/frontend && bun install --frozen-lockfile && bun run build)
 mkdir -p content .runtime
@@ -156,6 +164,19 @@ Echo Reader is a personal reading and note-taking tool. You are responsible for 
 - **The Session Bridge uses your own browser login.** Authorize only sites and accounts you own,
   keep the extension's allow-list small, and remember that automated access with your account may
   violate a site's terms and could get the account restricted.
+- **YouTube PO-token minting.** YouTube sometimes refuses downloads unless the request carries a
+  "proof of origin" (PO) token and visitor data that match a real browser session. When you grant the
+  browser extension access to `youtube.com`, yt-dlp can ask the extension (through the local bridge)
+  to open a background YouTube tab in *your* Chrome profile, read the visitor data from the page
+  and, where possible, generate a PO token there. The token and visitor data are passed to
+  yt-dlp for the download and kept only in the import service's memory (never written to disk),
+  and the extension only accepts YouTube video URLs or IDs for this request. This
+  makes downloads look like they come from your own signed-in browser. Doing so may conflict with
+  YouTube's Terms of Service, which restrict downloading except where YouTube offers it; **you
+  alone are responsible** for deciding whether your use is permitted (for example your own
+  uploads, Creative Commons videos or content you have permission for) and for any consequences
+  for your account. If you do not want this, do not grant the extension access to
+  `youtube.com` (or do not install the extension); the rest of Echo Reader works without it.
 - **Transcripts, speaker labels, OCR and LLM output are machine-generated and can be wrong.**
   Speaker diarization only assigns anonymous numbered labels and is not voice identification;
   do not use it to identify people. Review important text before you rely on or quote it.
@@ -197,7 +218,8 @@ Third-party components keep their own licenses; see
   Windows installer, standalone bundle or any other bundle or sidecar — the Windows build
   excludes them explicitly and fails if they appear. If you redistribute an environment that
   includes them, the GPL-3.0 applies to that distribution;
-- the Windows bundle ships an FFmpeg **GPLv3** build, so redistributing the bundle carries GPL
-  source-offer obligations;
+- the Windows bundle ships an unmodified **LGPL-3.0** FFmpeg build (BtbN `lgpl-shared`, no
+  libx264/libx265). Its license text and source links (`licenses/FFMPEG_SOURCE.txt`) are in the
+  bundle, and the FFmpeg DLLs in `tools\` can be replaced with your own build;
 - model weights (Whisper, Kokoro-82M, Fun-ASR-Nano, PP-OCR) are downloaded at runtime and are
   licensed by their authors (Apache-2.0 / MIT).

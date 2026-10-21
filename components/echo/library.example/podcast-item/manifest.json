@@ -5,7 +5,10 @@
   "updated_at": "2026-08-06T18:00:00+08:00",
   "source": {
     "type": "audio",
-    "url": "https://example.com/podcast"
+    "url": "https://example.com/podcast",
+    "title": "示例播客：转写校对工作流",
+    "author": "Echo Reader 示例",
+    "published_at": "2026-08-03T08:00:00+08:00"
   },
   "article": {
     "path": "article.md",
@@ -17,7 +20,7 @@
   },
   "primary_media": {
     "type": "audio",
-    "original_path": "media/original.wav",
+    "original_path": "media/playback.m4a",
     "playback_path": "media/playback.m4a",
     "mime_type": "audio/mp4",
     "title": "示例播客音频"

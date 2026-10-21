@@ -43,6 +43,7 @@ Cookie 或 OpenVINO 编译缓存，也不会修改或删除源目录。冲突会
 ## 许可
 
 Echo Reader 源码以 MIT 许可证发布，许可证原文见 `LICENSE.txt`。程序束中的第三方组件
-（FFmpeg GPLv3 构建、PyInstaller 引导程序、Deno、OpenVINO、sherpa-onnx 等）保留各自许可证，
-声明与原文见 `THIRD_PARTY_NOTICES.md` 和 `licenses\`。再分发本程序束时须一并提供这些文件，
-并履行 FFmpeg GPLv3 的源码提供义务。
+（FFmpeg LGPL-3.0 构建、PyInstaller 引导程序、Deno、OpenVINO、sherpa-onnx 等）保留各自许可证，
+声明与原文见 `THIRD_PARTY_NOTICES.md` 和 `licenses\`。再分发本程序束时须一并提供这些文件。
+FFmpeg 源码获取方式见 `licenses\FFMPEG_SOURCE.txt`；`tools\` 下的 FFmpeg 可执行文件和 DLL
+可以替换成你自己编译的同一主版本（替换前先退出 Echo Reader，重装或升级会恢复原文件）。

@@ -16,6 +16,7 @@
 
 from __future__ import annotations
 
+import functools
 import hashlib
 import json
 import logging
@@ -343,11 +344,44 @@ def _is_playable_copy(src: Path, ffprobe: dict | None) -> bool:
     return ext in COPY_AUDIO_EXTS
 
 
+# H.264 编码器按优先级选择。桌面程序束随附的是 FFmpeg LGPL 构建（不含 GPL 的 libx264），
+# 其中可用 libopenh264（BSD-2-Clause）；用户自己的 FFmpeg 若带 libx264 则优先用它。
+_H264_ENCODERS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("libx264", ("-preset", "medium", "-crf", "23")),
+    ("libopenh264", ("-rc_mode", "quality", "-b:v", "2500k")),
+    ("h264_mf", ("-b:v", "2500k")),
+)
+
+
+@functools.lru_cache(maxsize=8)
+def _available_encoders(ffmpeg_path: str) -> frozenset[str]:
+    try:
+        out = subprocess.run([ffmpeg_path, "-hide_banner", "-encoders"],
+                             capture_output=True, text=True, timeout=30)
+    except (OSError, subprocess.SubprocessError):
+        return frozenset()
+    names = set()
+    for line in (out.stdout or "").splitlines():
+        parts = line.split()
+        if len(parts) >= 2 and len(parts[0]) == 6 and parts[0][0] == "V":
+            names.add(parts[1])
+    return frozenset(names)
+
+
+def _h264_encoder_args(ffmpeg_path: str) -> list[str]:
+    available = _available_encoders(ffmpeg_path)
+    for name, extra in _H264_ENCODERS:
+        if name in available:
+            return ["-c:v", name, *extra]
+    raise RuntimeError("playback 转码失败: FFmpeg 没有可用的 H.264 编码器（需要 libx264、libopenh264 或 h264_mf）")
+
+
 def _transcode_media(src: Path, dst: Path, ffmpeg_path: str, ffprobe: dict | None) -> None:
-    """转码 playback（H.264+AAC 视频 / AAC 音频），与 echo producer-guide §6 命令一致。"""
-    cmd = [ffmpeg_path or "ffmpeg"]
+    """转码 playback（H.264+AAC 视频 / AAC 音频），与 echo producer-guide §6 一致。"""
+    binary = ffmpeg_path or "ffmpeg"
+    cmd = [binary]
     if ffprobe and ffprobe.get("video_codec"):
-        cmd += ["-i", str(src), "-c:v", "libx264", "-preset", "medium", "-crf", "23",
+        cmd += ["-i", str(src), *_h264_encoder_args(binary),
                 "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "128k",
                 "-movflags", "+faststart", "-y", str(dst)]
     else:

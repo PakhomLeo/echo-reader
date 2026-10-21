@@ -76,7 +76,9 @@ standalone zip 是免安装程序束，但仍按安装模式使用 Documents/LOC
 升级替换。
 
 源码以 MIT 许可证发布（见根目录 `LICENSE`）。二进制程序束另含第三方组件：BtbN FFmpeg
-GPLv3 构建、PyInstaller 引导程序（GPLv2+ 带打包例外）、Deno（MIT）以及 OpenVINO / sherpa-onnx
-等。公开分发 installer 或 standalone zip 前，必须随包提供这些组件的许可证原文，并履行 FFmpeg
-GPLv3 的源码提供义务（例如在发布页附上所用 FFmpeg 构建的源码或书面获取方式）。详见
+LGPL-3.0 构建（`lgpl-shared`，在 `mise.toml` 中按资产名和 SHA-256 固定，不含 libx264/libx265）、
+PyInstaller 引导程序（GPLv2+ 带打包例外）、Deno（MIT）以及 OpenVINO / sherpa-onnx 等。公开分发
+installer 或 standalone zip 前，必须随包提供这些组件的许可证原文，并在发布页附上 FFmpeg 对应源码
+（构建脚本已复制 `licenses/FFMPEG_SOURCE.txt`，写明源码链接和替换 DLL 的方法）。构建脚本会拒绝带
+`--enable-gpl` / `--enable-nonfree` 或 libx264/libx265 的 FFmpeg。详见
 `THIRD_PARTY_NOTICES.md`。

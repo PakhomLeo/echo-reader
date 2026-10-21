@@ -2,12 +2,20 @@
 
 [English](README.md) | **简体中文**
 
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Python 3.12](https://img.shields.io/badge/python-3.12-3776AB.svg)](pyproject.toml)
+[![Rust 2024](https://img.shields.io/badge/rust-2024_edition-orange.svg)](components/echo/backend/Cargo.toml)
+[![GitHub](https://img.shields.io/badge/GitHub-PakhomLeo%2Fecho--reader-181717.svg?logo=github)](https://github.com/PakhomLeo/echo-reader)
+
 Echo Reader 是一个本地优先的网页内容阅读应用。粘贴文章、帖子、播客或视频链接，它会把内容
 保存为你磁盘上的普通文件（Markdown 正文、图片、媒体、带时间轴的转写），并提供阅读器、全文
 检索、转写与播放器联动、Markdown 编辑，以及可选的朗读和图片文字识别（OCR）。
 
 所有功能都在你自己的电脑上运行：没有账号、没有服务器、没有遥测。云端服务（在线语音识别、
 大模型整理、云端 OCR）都是可选项，不配置就不会启用。
+
+仓库地址：<https://github.com/PakhomLeo/echo-reader>。本项目（包名 `echo-reader`）与 GitHub 或其他地方
+同名、近似名称的项目没有任何关系。
 
 ![架构图](docs/assets/architecture.svg)
 
@@ -69,7 +77,7 @@ Apple MPS 或 Intel XPU 上运行。
 ## 快速开始（Linux / macOS）
 
 ```bash
-git clone <repository-url> echo-reader && cd echo-reader
+git clone https://github.com/PakhomLeo/echo-reader.git echo-reader && cd echo-reader
 uv sync                                   # Python workspace（按需加 --extra local-asr 等）
 (cd components/echo/frontend && bun install --frozen-lockfile && bun run build)
 mkdir -p content .runtime
@@ -141,6 +149,14 @@ Echo Reader 是个人阅读和笔记工具，如何使用由你自己负责。
 - **不要用它绕过付费墙、DRM、访问控制或地区限制**，也不要用于批量爬取、镜像或再分发。
 - **会话桥使用的是你自己的浏览器登录态。** 只授权你自己的网站和账号，保持扩展的授权域名单尽量小；
   用你的账号进行自动化访问可能违反网站条款，账号可能因此受限。
+- **YouTube PO Token 生成（mint）。** YouTube 有时要求下载请求带上与真实浏览器会话一致的“来源证明”
+  （PO）令牌和 visitor data，否则拒绝下载。给浏览器扩展授予 `youtube.com` 访问权限后，yt-dlp 可以经本地会话桥
+  请求扩展：在**你自己的** Chrome 配置里打开一个后台 YouTube 标签页，读取页面上的 visitor data，并尽可能
+  在页面内生成 PO 令牌。令牌和 visitor data 交给 yt-dlp 用于下载，只保存在导入服务的内存里，不写入磁盘；这个请求只接受 YouTube 视频地址或视频 ID。
+  这样下载请求看起来就像来自你登录的浏览器，这可能与 YouTube 服务条款（除 YouTube 提供的下载方式外
+  限制下载）相冲突。**是否允许这样使用（例如你自己上传的视频、知识共享许可视频或已获授权的内容），
+  以及对账号造成的后果，完全由你自己负责。** 如果不想使用，不要给扩展授予 `youtube.com` 权限（或不安装扩展），
+  Echo Reader 的其他功能不受影响。
 - **转写、说话人标签、OCR 和大模型输出都是机器生成的，可能出错。** 说话人分离只给出匿名编号，
   不是声纹识别，不要用它识别具体的人。引用或依赖重要文字前请先人工核对。
 - **云端功能会把数据发给第三方。** 在线识别把音频上传到你的 OSS 和 DashScope；云端 OCR 上传图片；
@@ -175,6 +191,8 @@ Echo Reader 以 [MIT 许可证](LICENSE) 发布。
   本项目**不分发**它们：不在本仓库中，不在我们构建的 wheel / sdist 中，也不在 Windows 安装包、免安装
   程序束或任何其他 bundle / sidecar 中——Windows 构建会显式排除它们，一旦出现即构建失败。如果你再分发
   包含它们的环境，该分发须遵守 GPL-3.0；
-- Windows 程序束包含 FFmpeg **GPLv3** 构建，再分发程序束需要履行 GPL 的源码提供义务；
+- Windows 程序束附带未修改的 FFmpeg **LGPL-3.0** 构建（BtbN `lgpl-shared`，不含 libx264/libx265）。
+  许可证原文和源码链接（`licenses/FFMPEG_SOURCE.txt`）都在程序束里，`tools\` 下的 FFmpeg DLL 可以换成
+  你自己编译的版本；
 - 模型权重（Whisper、Kokoro-82M、Fun-ASR-Nano、PP-OCR）在运行时下载，许可证由各自作者规定
   （Apache-2.0 / MIT）。

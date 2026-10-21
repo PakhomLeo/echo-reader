@@ -5,7 +5,10 @@
   "updated_at": "2026-08-06T20:00:00+08:00",
   "source": {
     "type": "video",
-    "url": "https://example.com/source"
+    "url": "https://example.com/source",
+    "title": "示例访谈：人工智能与个人知识管理",
+    "author": "Echo Reader 示例",
+    "published_at": "2026-08-01T08:00:00+08:00"
   },
   "article": {
     "path": "article.md",
@@ -17,7 +20,7 @@
   },
   "primary_media": {
     "type": "video",
-    "original_path": "media/original.mkv",
+    "original_path": "media/playback.mp4",
     "playback_path": "media/playback.mp4",
     "mime_type": "video/mp4",
     "title": "示例访谈视频"

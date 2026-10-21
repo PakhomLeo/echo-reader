@@ -202,7 +202,7 @@
 
 | 类型 | 保证支持 | 推荐命令（ffmpeg） |
 |---|---|---|
-| 视频 | MP4，H.264 视频 + AAC 音频 | `ffmpeg -i in.mkv -c:v libx264 -preset medium -crf 23 -pix_fmt yuv420p -c:a aac -b:a 128k -movflags +faststart out.mp4` |
+| 视频 | MP4，H.264 视频 + AAC 音频 | `ffmpeg -i in.mkv -c:v libx264 -preset medium -crf 23 -pix_fmt yuv420p -c:a aac -b:a 128k -movflags +faststart out.mp4`（LGPL 构建没有 libx264 时用 `-c:v libopenh264 -rc_mode quality -b:v 2500k`） |
 | 音频 | MP3、M4A（AAC） | `ffmpeg -i in.wav -c:a aac -b:a 128k out.m4a` |
 
 规则：

@@ -12,8 +12,11 @@
 AppId={{F22E6C98-37C1-4CE1-90C6-35E9D349F86D}
 AppName=Echo Reader
 AppVersion={#AppVersion}
-AppPublisher=Echo Reader contributors
-AppCopyright=Copyright (c) 2026 Echo Reader contributors. Released under the MIT License.
+AppPublisher=PakhomLeo and contributors
+AppPublisherURL=https://github.com/PakhomLeo/echo-reader
+AppSupportURL=https://github.com/PakhomLeo/echo-reader/issues
+AppUpdatesURL=https://github.com/PakhomLeo/echo-reader/releases
+AppCopyright=Copyright (c) 2026 PakhomLeo and contributors. Released under the MIT License.
 LicenseFile={#BundleDir}\LICENSE.txt
 DefaultDirName={localappdata}\Programs\Echo Reader
 DefaultGroupName=Echo Reader

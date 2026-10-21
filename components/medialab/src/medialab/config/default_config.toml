@@ -190,5 +190,5 @@ enabled = true
 engine = "auto"
 allow_cloud = false
 endpoint = "https://paddleocr.aistudio-app.com/api/v2/ocr/jobs"
-model = "PaddleOCR-VL-1.6"
+model = "PaddleOCR-VL-1.5"   # 官方异步 API 文档列出的模型名：PaddleOCR-VL-1.5 / PaddleOCR-VL / PP-StructureV3
 max_poll_attempts = 60

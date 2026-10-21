@@ -4,7 +4,7 @@ Two engines, both optional:
 
 * ``rapidocr`` – fully local (``rapidocr-onnxruntime``, PP-OCR models ship inside the
   wheel). Install with the ``ocr`` extra.
-* ``paddleocr_api`` – the PaddleOCR-VL cloud job API used by the original Echo app.
+* ``paddleocr_api`` – the PaddleOCR-VL cloud job API (Baidu AI Studio).
   Needs ``[ocr] endpoint`` and a token in ``secrets.toml``; images are uploaded to that
   service, so it is opt-in (``allow_cloud = true``).
 
@@ -25,7 +25,10 @@ from typing import Any
 import httpx
 
 ENGINES = ("auto", "rapidocr", "paddleocr_api")
-PADDLE_DEFAULT_MODEL = "PaddleOCR-VL-1.6"
+# Model names accepted by the AI Studio async job API (https://ai.baidu.com/ai-doc/AISTUDIO/fml7mozw5,
+# updated 2026-02-04): "PaddleOCR-VL-1.5", "PaddleOCR-VL", "PP-StructureV3" (and "PP-OCRv5").
+# PaddleOCR-VL-1.6 exists as an open model but is not listed for this hosted API.
+PADDLE_DEFAULT_MODEL = "PaddleOCR-VL-1.5"
 PADDLE_OPTIONAL_PAYLOAD = {
     "useDocOrientationClassify": False,
     "useDocUnwarping": False,

@@ -18,6 +18,11 @@ dependencies = [
     "curl-cffi==0.15.0",
 ]
 
+[project.urls]
+Homepage = "https://github.com/PakhomLeo/echo-reader/tree/main/components/medialab"
+Repository = "https://github.com/PakhomLeo/echo-reader"
+Issues = "https://github.com/PakhomLeo/echo-reader/issues"
+
 [project.optional-dependencies]
 cloud = ["oss2>=2.19"]
 render = ["playwright>=1.54,<2"]

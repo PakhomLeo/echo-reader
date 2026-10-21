@@ -65,6 +65,20 @@ function Assert-NoGplTtsDependency([string]$Root, [string]$Label) {
     }
 }
 
+# FFmpeg must be the BtbN LGPL build pinned in mise.toml (no --enable-gpl / --enable-nonfree,
+# no libx264/libx265). The Windows build is the shared variant so the LGPL libraries ship as
+# replaceable DLLs next to ffmpeg.exe.
+function Assert-LgplFfmpeg([string]$FfmpegPath) {
+    $versionText = (& $FfmpegPath -hide_banner -version) -join "`n"
+    if ($LASTEXITCODE -ne 0) { throw "ffmpeg -version failed for $FfmpegPath" }
+    foreach ($flag in @('--enable-gpl', '--enable-nonfree', '--enable-libx264', '--enable-libx265')) {
+        if ($versionText.Contains($flag)) { throw "Bundled FFmpeg must be an LGPL build, but it was configured with $flag" }
+    }
+    $encoders = (& $FfmpegPath -hide_banner -encoders) -join "`n"
+    if ($encoders -match '\blibx26[45]\b') { throw 'Bundled FFmpeg exposes GPL-only H.264/H.265 encoders' }
+    if ($encoders -notmatch '\blibopenh264\b') { throw 'Bundled FFmpeg lacks libopenh264, which playback transcoding needs' }
+}
+
 function Assert-NoCredentialResidue([string]$Root, [string]$Label) {
     if (-not (Test-Path -LiteralPath $Root -PathType Container)) {
         throw "$Label does not exist: $Root"
@@ -180,7 +194,12 @@ try {
     Copy-Item -LiteralPath (Join-Path $projectRoot 'components\echo\frontend\dist') -Destination (Join-Path $bundleRoot 'web') -Recurse
     Copy-Item -LiteralPath (Join-Path $projectRoot 'components\medialab\browser-extension') -Destination (Join-Path $bundleRoot 'browser-extension') -Recurse
     New-Item -ItemType Directory -Path (Join-Path $bundleRoot 'tools') -Force | Out-Null
+    Assert-LgplFfmpeg $ffmpegPath
     Copy-Item -LiteralPath $ffmpegPath,$ffprobePath,$denoPath -Destination (Join-Path $bundleRoot 'tools')
+    # LGPL shared build: ship the FFmpeg libraries as separate, user-replaceable DLLs.
+    $ffmpegLibraries = Get-ChildItem -LiteralPath (Split-Path $ffmpegPath -Parent) -File -Filter '*.dll' | Where-Object { $_.Name -match '^(avcodec|avdevice|avfilter|avformat|avutil|swresample|swscale)-\d+\.dll$' }
+    if (@($ffmpegLibraries).Count -lt 7) { throw 'Expected the seven FFmpeg LGPL shared libraries next to ffmpeg.exe' }
+    Copy-Item -LiteralPath $ffmpegLibraries.FullName -Destination (Join-Path $bundleRoot 'tools')
     $templatesRoot = Join-Path $bundleRoot 'config-templates'
     New-Item -ItemType Directory -Path $templatesRoot -Force | Out-Null
     Copy-Item -LiteralPath (Join-Path $projectRoot 'components\medialab\src\medialab\config\secrets.toml.example') -Destination $templatesRoot
@@ -191,6 +210,7 @@ try {
     $ffmpegLicense = Get-ChildItem -LiteralPath (Split-Path (Split-Path $ffmpegPath -Parent) -Parent) -Recurse -File -Filter 'LICENSE.txt' | Select-Object -First 1
     if ($null -eq $ffmpegLicense) { throw 'Bundled FFmpeg license was not found' }
     Copy-Item -LiteralPath $ffmpegLicense.FullName -Destination (Join-Path $licensesRoot 'FFMPEG_LICENSE.txt')
+    Copy-Item -LiteralPath (Join-Path $projectRoot 'installer\licenses\FFMPEG_SOURCE.txt') -Destination $licensesRoot
     $sitePackages = Join-Path $projectRoot '.venv\Lib\site-packages'
     $pyinstallerLicense = Get-ChildItem -LiteralPath $sitePackages -Directory -Filter 'pyinstaller-*.dist-info' | ForEach-Object { Join-Path $_.FullName 'licenses\COPYING.txt' } | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
     $hooksLicense = Get-ChildItem -LiteralPath $sitePackages -Directory -Filter 'pyinstaller_hooks_contrib-*.dist-info' | ForEach-Object { Join-Path $_.FullName 'licenses\LICENSE' } | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1

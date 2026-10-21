@@ -7,7 +7,8 @@ Security fixes are provided for the default branch and the latest release.
 ## Reporting a vulnerability
 
 Do not open a public issue for a suspected vulnerability. Use the repository's
-private vulnerability reporting ("Security" tab → "Report a vulnerability").
+private vulnerability reporting ("Security" tab → "Report a vulnerability"):
+<https://github.com/PakhomLeo/echo-reader/security/advisories/new>.
 Include reproduction steps, affected versions or commits, impact, and any
 suggested mitigation.
 

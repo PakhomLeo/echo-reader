@@ -37,7 +37,7 @@ def test_paddle_api_submit_poll_fetch(tmp_path: Path):
     def handler(request: httpx.Request) -> httpx.Response:
         seen.append((request.method, str(request.url), request.headers.get("authorization")))
         if request.method == "POST":
-            assert b"PaddleOCR-VL-1.6" in request.content
+            assert b"PaddleOCR-VL-1.5" in request.content
             return httpx.Response(200, json={"data": {"jobId": "j1"}})
         if request.url.path == "/jobs/j1":
             state = next(polls)
@@ -106,3 +106,17 @@ def test_paddle_api_rejects_unsafe_job_ids_and_plain_http_results():
         api.submit(Path(__file__))
     with pytest.raises(ocr.OcrError, match="https"):
         api.fetch("http://files.test/r.jsonl")
+
+
+def test_default_paddle_model_matches_the_documented_api_models():
+    # The AI Studio async job API documents these model names; 1.6 is not one of them.
+    import tomllib
+
+    from medialab import ocr
+    from medialab.config import DEFAULT_CONFIG_PATH
+
+    documented = {"PaddleOCR-VL-1.5", "PaddleOCR-VL", "PP-StructureV3", "PP-OCRv5"}
+    assert ocr.PADDLE_DEFAULT_MODEL == "PaddleOCR-VL-1.5"
+    config = tomllib.loads(DEFAULT_CONFIG_PATH.read_text("utf-8"))
+    assert config["ocr"]["model"] in documented
+    assert config["ocr"]["model"] == ocr.PADDLE_DEFAULT_MODEL

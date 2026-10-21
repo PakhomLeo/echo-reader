@@ -1,0 +1,40 @@
+FFmpeg in this package
+======================
+
+The files in tools\ named ffmpeg.exe, ffprobe.exe, avcodec-62.dll, avdevice-62.dll,
+avfilter-11.dll, avformat-62.dll, avutil-60.dll, swresample-6.dll and swscale-9.dll are an
+unmodified LGPL build of FFmpeg made by the BtbN/FFmpeg-Builds project:
+
+  Build:   ffmpeg-n8.1.2-34-g9b6c8969e0-win64-lgpl-shared-8.1.zip
+  Release: https://github.com/BtbN/FFmpeg-Builds/releases/tag/autobuild-2026-07-31-14-10
+  SHA-256: c222a490dde4e7059f45495deef6bfb98dbcacc2b43df5b607546252037aa95c
+
+License: GNU Lesser General Public License, version 3 or later (configured with
+--enable-version3, without --enable-gpl or --enable-nonfree; no libx264/libx265).
+The full license text is in FFMPEG_LICENSE.txt.
+
+Corresponding source
+--------------------
+  FFmpeg source (commit 9b6c8969e0, release/8.1 branch):
+    https://github.com/FFmpeg/FFmpeg/tree/9b6c8969e0
+    https://git.ffmpeg.org/gitweb/ffmpeg.git/commit/9b6c8969e0
+  Build scripts and pinned versions of every bundled third-party library
+  (OpenH264, LAME, Opus, dav1d, ...):
+    https://github.com/BtbN/FFmpeg-Builds/tree/autobuild-2026-07-31-14-10
+
+The echo-reader project also attaches the FFmpeg source archive to each GitHub release
+that ships this package (https://github.com/PakhomLeo/echo-reader/releases). If you cannot
+obtain it there, open an issue in that repository and we will provide it for at least
+three years after we last distributed this package.
+
+Replacing the FFmpeg libraries
+------------------------------
+echo-reader does not link FFmpeg into its own code; it runs ffmpeg.exe and ffprobe.exe as
+separate processes. You may replace any of the files listed above with your own build of
+the same FFmpeg major version (for example a build you compiled from modified source):
+close echo-reader, overwrite the files in <install folder>\tools\, and start it again.
+Note: the installer restores the original files when you reinstall or update.
+
+H.264 video is encoded with OpenH264 (BSD-2-Clause) compiled from source. Cisco's H.264
+patent license covers only Cisco's own OpenH264 binaries, not this build; you are
+responsible for any patent licensing that applies where you use it.
