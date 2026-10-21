@@ -574,6 +574,67 @@ class TestClose(unittest.TestCase):
         asyncio.run(main())
 
 
+class TestMissingFfmpeg(unittest.TestCase):
+    """Without ffmpeg the service must degrade cleanly (CI runners have no ffmpeg)."""
+
+    _NO_FFMPEG = RuntimeError("未找到 ffmpeg：请安装 ffmpeg 或配置 [audio].ffmpeg_path")
+
+    def test_initialize_without_ffmpeg_reports_none_on_partially_built_service(self):
+        import asyncio
+
+        async def main():
+            with tempfile.TemporaryDirectory() as d:
+                svc = TestClose._make_svc(d)
+                with mock.patch("medialab.service.AudioProcessor", side_effect=self._NO_FFMPEG):
+                    result = await svc.initialize()
+                    self.assertIsNone(result["ffmpeg"])
+                    self.assertIsNone(svc._audio)
+                    # A second initialize() returns the cached result without raising.
+                    self.assertIsNone((await svc.initialize())["ffmpeg"])
+                await svc.close()
+
+        asyncio.run(main())
+
+    def test_local_transcribe_without_ffmpeg_fails_before_asr_worker(self):
+        import asyncio
+
+        async def main():
+            with tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                svc = DownloadService(config={"paths": {
+                    "db": str(root / "tasks.db"),
+                    "delivery": str(root / "delivery"),
+                    "temp": str(root / "tmp"),
+                }})
+                with mock.patch("medialab.service.AudioProcessor", side_effect=self._NO_FFMPEG):
+                    await svc.initialize()
+
+                def fake_download(task_id, *args, **kwargs):
+                    staging = root / "delivery" / f".staging-{task_id}"
+                    (staging / "media").mkdir(parents=True)
+                    audio = staging / "media" / "original.m4a"
+                    audio.write_bytes(b"audio")
+                    return {"task_dir": staging, "staging": staging, "audio_src": audio,
+                            "tmp": root / "tmp" / task_id, "session": None,
+                            "manifest_id": f"local-{task_id}",
+                            "source_info": {"title": task_id}, "media": None}
+
+                with mock.patch.object(svc, "_transcribe_download_common",
+                                       side_effect=fake_download), \
+                     mock.patch.object(svc, "_create_local_asr_executor") as create_executor:
+                    handle = await svc.transcribe_local(
+                        "https://example.test/video", wait=True, local_diarization=False,
+                    )
+                task = await svc.query(handle.id)
+                self.assertEqual(task["status"], "failed")
+                self.assertIn("ffmpeg", task["error_detail"])
+                create_executor.assert_not_called()
+                self.assertFalse((root / "delivery" / f".staging-{handle.id}").exists())
+                await svc.close()
+
+        asyncio.run(main())
+
+
 class TestLocalTranscribe(unittest.TestCase):
     def test_online_download_entry_keeps_exact_common_call(self):
         svc = DownloadService.__new__(DownloadService)
@@ -795,6 +856,7 @@ class TestLocalTranscribe(unittest.TestCase):
         class InlineExecutor:
             def __init__(self):
                 self.calls = []
+                self.ffmpeg_paths = []
                 self._shutdown = False
                 self.reject_all = False
             def submit(self, fn, *args):
@@ -802,6 +864,7 @@ class TestLocalTranscribe(unittest.TestCase):
                 future = concurrent.futures.Future()
                 mode = args[-3]
                 self.calls.append(mode)
+                self.ffmpeg_paths.append(args[1])
                 if self.reject_all and mode == "model":
                     future.set_result({
                         "segments": [
@@ -835,7 +898,11 @@ class TestLocalTranscribe(unittest.TestCase):
                                        "temp": str(root / "tmp")}},
                     on_event=lambda name, payload: events.append((name, payload)),
                 )
-                await svc.initialize()
+                # The local ASR worker receives the ffmpeg path; inject one so the test
+                # does not depend on ffmpeg being installed on the host (CI has none).
+                with mock.patch("medialab.service.AudioProcessor",
+                                return_value=types.SimpleNamespace(ffmpeg_path="/fake/ffmpeg")):
+                    await svc.initialize()
                 executor = InlineExecutor()
 
                 def fake_download(task_id, *args, **kwargs):
@@ -856,6 +923,7 @@ class TestLocalTranscribe(unittest.TestCase):
                     )
                 self.assertEqual((await svc.query(handle.id))["status"], "done")
                 self.assertEqual(executor.calls, ["vad", "model"])
+                self.assertEqual(executor.ffmpeg_paths, ["/fake/ffmpeg", "/fake/ffmpeg"])
                 quality = [p["quality"] for n, p in events
                            if n == "task_progress" and p["stage"] == "quality_check"]
                 self.assertEqual([item["accepted"] for item in quality], [False, True])

@@ -190,6 +190,8 @@ class DownloadService:
         self._emitter.bind_loop(asyncio.get_running_loop())
         self._store = Store(self._db_path)
         self._store.mark_interrupted()  # 上次进程遗留的 queued/running 任务标记为 interrupted
+        # 缺 ffmpeg 时 _audio 明确为 None（而不是缺失属性），下游统一按“转音频不可用”处理。
+        self._audio = None
         try:
             self._audio = AudioProcessor(self._cfg["audio"].get("ffmpeg_path", ""))
         except RuntimeError as e:
@@ -220,7 +222,7 @@ class DownloadService:
     def _initialize_result(self) -> dict:
         return {
             "db": str(self._db_path),
-            "ffmpeg": getattr(self._audio, "ffmpeg_path", None) if self._audio else None,
+            "ffmpeg": getattr(getattr(self, "_audio", None), "ffmpeg_path", None),
         }
 
     def _ensure_lifecycle_state(self) -> None:
@@ -533,6 +535,9 @@ class DownloadService:
                         task_id, url, platform, format, audio_format, out_dir,
                         asr_backend="local", defer_publish=True,
                     )
+                if self._audio is None:
+                    # 本地 ASR worker 需要 ffmpeg 解码音频；不要把 None 传进 worker。
+                    raise RuntimeError("ffmpeg 不可用，无法本地转写")
                 self._progress(task_id, "waiting_for_asr", asr_backend="local")
                 async with self._local_asr_sem:
                     if self._local_asr_executor is None:
