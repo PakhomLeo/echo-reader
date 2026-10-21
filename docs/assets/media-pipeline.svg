@@ -1,0 +1,158 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 570" width="960" height="570" role="img" aria-labelledby="t d" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, 'Noto Sans SC', sans-serif">
+  <title id="t">Echo Reader media processing</title>
+  <desc id="d">Downloaded media is converted to an audio track with FFmpeg and transcribed either online (sliced, uploaded to your OSS bucket and sent to DashScope) or locally (OpenVINO Whisper with Silero VAD, or Fun-ASR-Nano). A quality gate rejects empty transcripts; the online path can add an LLM clean-up into article.md. The item is published into the library folder. The Rust gateway rescans the library and keeps a SQLite FTS5 index of titles, article blocks, transcript segments and OCR text in the user cache. Read-aloud (Kokoro) and OCR (RapidOCR or the PaddleOCR-VL API) run on demand from the reader, write their results into the item folder and trigger a rescan.</desc>
+  <style>
+    .bg{fill:#ffffff}
+    .box{fill:#f6f8fa;stroke:#57606a;stroke-width:1.5}
+    .acc{fill:#ddf4ff;stroke:#0969da;stroke-width:1.5}
+    .grn{fill:#dafbe1;stroke:#1a7f37;stroke-width:1.5}
+    .red{fill:#ffebe9;stroke:#cf222e;stroke-width:1.5}
+    .opt{fill:#fff8c5;stroke:#9a6700;stroke-width:1.5;stroke-dasharray:6 4}
+    .h{fill:#1f2328;font-size:14px;font-weight:600}
+    .s{fill:#59636e;font-size:11.5px}
+    .z{fill:#59636e;font-size:12px;font-style:italic}
+    .ln{stroke:#57606a;stroke-width:1.6;fill:none}
+    .lr{stroke:#cf222e;stroke-width:1.4;fill:none;stroke-dasharray:5 4}
+    .lo{stroke:#9a6700;stroke-width:1.4;fill:none;stroke-dasharray:5 4}
+    .lb{fill:#59636e;font-size:11px}
+    .ah{fill:#57606a}
+    .ao{fill:#9a6700}
+    @media (prefers-color-scheme: dark){
+      .bg{fill:#0d1117}
+      .box{fill:#161b22;stroke:#8b949e}
+      .acc{fill:#0c2d6b;stroke:#4493f8}
+      .grn{fill:#0f3a1e;stroke:#3fb950}
+      .red{fill:#4a1418;stroke:#f85149}
+      .opt{fill:#3b2e00;stroke:#d29922}
+      .h{fill:#e6edf3}
+      .s,.lb,.z{fill:#9198a1}
+      .ln{stroke:#8b949e}
+      .lr{stroke:#f85149}
+      .lo{stroke:#d29922}
+      .ah{fill:#8b949e}
+      .ao{fill:#d29922}
+    }
+  </style>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker>
+    <marker id="o" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path class="ao" d="M0,0 L10,5 L0,10 z"/></marker>
+  </defs>
+  <rect class="bg" width="960" height="570" rx="12"/>
+
+  <text class="z" x="20" y="24">Transcription (during import)</text>
+
+  <rect class="box" x="20" y="96" width="150" height="74" rx="10"/>
+  <text class="h" x="95" y="122" text-anchor="middle">Downloaded media</text>
+  <text class="s" x="95" y="142" text-anchor="middle">media/original.*</text>
+  <text class="s" x="95" y="158" text-anchor="middle">from yt-dlp</text>
+
+  <rect class="acc" x="200" y="96" width="170" height="74" rx="10"/>
+  <text class="h" x="285" y="122" text-anchor="middle">1. Extract audio</text>
+  <text class="s" x="285" y="142" text-anchor="middle">FFmpeg → original.m4a</text>
+  <text class="s" x="285" y="158" text-anchor="middle">(ASR input)</text>
+
+  <rect class="opt" x="400" y="36" width="250" height="90" rx="10"/>
+  <text class="h" x="525" y="62" text-anchor="middle">Online ASR (optional)</text>
+  <text class="s" x="525" y="82" text-anchor="middle">60 s slices, 1 s overlap → your OSS</text>
+  <text class="s" x="525" y="98" text-anchor="middle">DashScope qwen-audio-3.0 filetrans</text>
+  <text class="s" x="525" y="114" text-anchor="middle">speaker labels, timestamps re-aligned</text>
+
+  <rect class="box" x="400" y="140" width="250" height="106" rx="10"/>
+  <text class="h" x="525" y="166" text-anchor="middle">Local ASR</text>
+  <text class="s" x="525" y="186" text-anchor="middle">Whisper-small INT8 (OpenVINO, Intel</text>
+  <text class="s" x="525" y="202" text-anchor="middle">GPU) + Silero VAD, 2 timestamp modes</text>
+  <text class="s" x="525" y="218" text-anchor="middle">or Fun-ASR-Nano (CPU/CUDA/MPS/XPU)</text>
+  <text class="s" x="525" y="234" text-anchor="middle">speakers: sherpa-onnx or CAM++</text>
+
+  <rect class="acc" x="680" y="36" width="260" height="90" rx="10"/>
+  <text class="h" x="810" y="62" text-anchor="middle">2. Quality gate</text>
+  <text class="s" x="810" y="82" text-anchor="middle">empty text is always rejected; audio</text>
+  <text class="s" x="810" y="98" text-anchor="middle">over 10 s needs ≥ 0.5 characters/s</text>
+  <text class="s" x="810" y="114" text-anchor="middle">and ≥ 15 % timeline coverage</text>
+
+  <rect class="opt" x="680" y="146" width="260" height="74" rx="10"/>
+  <text class="h" x="810" y="172" text-anchor="middle">3. LLM clean-up (online path)</text>
+  <text class="s" x="810" y="192" text-anchor="middle">DashScope / OpenAI-compatible / Ollama</text>
+  <text class="s" x="810" y="208" text-anchor="middle">→ article.md; a failure is not fatal</text>
+
+  <rect class="grn" x="680" y="240" width="260" height="90" rx="10"/>
+  <text class="h" x="810" y="266" text-anchor="middle">4. Publish the item</text>
+  <text class="s" x="810" y="286" text-anchor="middle">transcript.json + browser playback copy</text>
+  <text class="s" x="810" y="302" text-anchor="middle">H.264: libx264 → libopenh264 → h264_mf</text>
+  <text class="s" x="810" y="318" text-anchor="middle">atomic swap from .staging</text>
+
+  <rect class="red" x="20" y="200" width="350" height="54" rx="10"/>
+  <text class="h" x="195" y="223" text-anchor="middle">Rejected: job fails, nothing published</text>
+  <text class="s" x="195" y="242" text-anchor="middle">e.g. music-only video; retry from the task page</text>
+
+  <text class="z" x="20" y="290">Library and search (Rust gateway)</text>
+
+  <rect class="grn" x="470" y="300" width="180" height="90" rx="10"/>
+  <text class="h" x="560" y="326" text-anchor="middle">Library folder</text>
+  <text class="s" x="560" y="346" text-anchor="middle">manifest.json, article.md,</text>
+  <text class="s" x="560" y="362" text-anchor="middle">transcript.json, ocr.json,</text>
+  <text class="s" x="560" y="378" text-anchor="middle">images/, media/</text>
+
+  <rect class="acc" x="250" y="300" width="190" height="90" rx="10"/>
+  <text class="h" x="345" y="326" text-anchor="middle">5. Rescan + sync</text>
+  <text class="s" x="345" y="346" text-anchor="middle">on start, after each rescan</text>
+  <text class="s" x="345" y="362" text-anchor="middle">and before every search;</text>
+  <text class="s" x="345" y="378" text-anchor="middle">edits re-index one item</text>
+
+  <rect class="acc" x="20" y="300" width="200" height="90" rx="10"/>
+  <text class="h" x="120" y="326" text-anchor="middle">6. SQLite FTS5 index</text>
+  <text class="s" x="120" y="346" text-anchor="middle">title, article blocks, transcript</text>
+  <text class="s" x="120" y="362" text-anchor="middle">segments, OCR text + CJK n-grams</text>
+  <text class="s" x="120" y="378" text-anchor="middle">in the user cache (rebuildable)</text>
+
+  <rect class="box" x="20" y="430" width="200" height="90" rx="10"/>
+  <text class="h" x="120" y="456" text-anchor="middle">7. Search page</text>
+  <text class="s" x="120" y="476" text-anchor="middle">keyword or question query,</text>
+  <text class="s" x="120" y="492" text-anchor="middle">snippets per article block,</text>
+  <text class="s" x="120" y="508" text-anchor="middle">transcript segment or image</text>
+
+  <text class="z" x="250" y="420">On demand from the reader</text>
+
+  <rect class="box" x="250" y="430" width="190" height="90" rx="10"/>
+  <text class="h" x="345" y="456" text-anchor="middle">Feature check</text>
+  <text class="s" x="345" y="476" text-anchor="middle">missing extra or model →</text>
+  <text class="s" x="345" y="492" text-anchor="middle">503 feature_disabled and</text>
+  <text class="s" x="345" y="508" text-anchor="middle">the button is hidden</text>
+
+  <rect class="opt" x="470" y="430" width="225" height="106" rx="10"/>
+  <text class="h" x="582" y="456" text-anchor="middle">Read-aloud (tts extra)</text>
+  <text class="s" x="582" y="476" text-anchor="middle">article.md → plain text, ≤ 20,000</text>
+  <text class="s" x="582" y="492" text-anchor="middle">chars; mostly CJK → Chinese voice</text>
+  <text class="s" x="582" y="508" text-anchor="middle">Kokoro-82M ONNX, offline</text>
+  <text class="s" x="582" y="524" text-anchor="middle">→ media/tts-article.wav</text>
+
+  <rect class="opt" x="715" y="430" width="225" height="106" rx="10"/>
+  <text class="h" x="827" y="456" text-anchor="middle">Image OCR (ocr extra)</text>
+  <text class="s" x="827" y="476" text-anchor="middle">up to 200 images of the item</text>
+  <text class="s" x="827" y="492" text-anchor="middle">RapidOCR locally, or PaddleOCR-VL</text>
+  <text class="s" x="827" y="508" text-anchor="middle">API only if allow_cloud = true</text>
+  <text class="s" x="827" y="524" text-anchor="middle">→ ocr.json</text>
+
+  <!-- transcription arrows -->
+  <path class="ln" d="M170,133 L198,133" marker-end="url(#a)"/>
+  <path class="ln" d="M370,120 C385,120 385,81 398,81" marker-end="url(#a)"/>
+  <path class="ln" d="M370,146 C385,146 385,193 398,193" marker-end="url(#a)"/>
+  <path class="ln" d="M650,81 L678,81" marker-end="url(#a)"/>
+  <path class="ln" d="M650,193 C665,193 665,110 678,110" marker-end="url(#a)"/>
+  <path class="lo" d="M810,126 L810,144" marker-end="url(#o)"/>
+  <path class="ln" d="M940,100 C956,100 956,285 942,285" marker-end="url(#a)"/>
+  <text class="lb" x="900" y="140">local</text>
+  <path class="lo" d="M810,220 L810,238" marker-end="url(#o)"/>
+  <path class="lr" d="M720,36 L720,30 L185,30 L185,198" marker-end="url(#a)"/>
+  <text class="lb" x="600" y="26">rejected by the gate</text>
+
+  <!-- library and search arrows -->
+  <path class="ln" d="M680,300 C665,300 665,330 652,330" marker-end="url(#a)"/>
+  <path class="ln" d="M470,345 L442,345" marker-end="url(#a)"/>
+  <path class="ln" d="M250,345 L222,345" marker-end="url(#a)"/>
+  <path class="ln" d="M120,390 L120,428" marker-end="url(#a)"/>
+  <path class="lo" d="M440,475 L468,475" marker-end="url(#o)"/>
+  <path class="lo" d="M582,430 L582,392" marker-end="url(#o)"/>
+  <path class="lo" d="M760,430 C760,400 680,390 652,380" marker-end="url(#o)"/>
+  <text class="lb" x="592" y="412">write, then rescan</text>
+</svg>

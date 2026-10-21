@@ -1,0 +1,152 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 640" width="960" height="640" role="img" aria-labelledby="t d" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, 'Noto Sans SC', sans-serif">
+  <title id="t">Echo Reader acquisition chain</title>
+  <desc id="d">How one URL is fetched. Pages are requested with a curl_cffi session that imitates Chrome 146, probed by site adapters and Trafilatura, and rendered with Playwright and an installed Microsoft Edge only where the per-platform policy asks for it. Media is downloaded by yt-dlp through its curl_cffi impersonation handler; platforms on the session-first list use browser cookies straight away, others start anonymous and retry with cookies after an authentication error. Cookies come from the optional Chrome Session Bridge extension through a process-memory credential broker. For YouTube the extension can also mint visitor data and a PO token, passed to yt-dlp as extractor arguments, and a yt-dlp PO-token provider plugin can request further tokens through the same bridge.</desc>
+  <style>
+    .bg{fill:#ffffff}
+    .box{fill:#f6f8fa;stroke:#57606a;stroke-width:1.5}
+    .acc{fill:#ddf4ff;stroke:#0969da;stroke-width:1.5}
+    .grn{fill:#dafbe1;stroke:#1a7f37;stroke-width:1.5}
+    .opt{fill:#fff8c5;stroke:#9a6700;stroke-width:1.5;stroke-dasharray:6 4}
+    .zone{fill:none;stroke:#8c959f;stroke-width:1.2;stroke-dasharray:4 4}
+    .h{fill:#1f2328;font-size:14px;font-weight:600}
+    .s{fill:#59636e;font-size:11.5px}
+    .z{fill:#59636e;font-size:12px;font-style:italic}
+    .ln{stroke:#57606a;stroke-width:1.6;fill:none}
+    .lo{stroke:#9a6700;stroke-width:1.4;fill:none;stroke-dasharray:5 4}
+    .lb{fill:#59636e;font-size:11px}
+    .ah{fill:#57606a}
+    .ao{fill:#9a6700}
+    @media (prefers-color-scheme: dark){
+      .bg{fill:#0d1117}
+      .box{fill:#161b22;stroke:#8b949e}
+      .acc{fill:#0c2d6b;stroke:#4493f8}
+      .grn{fill:#0f3a1e;stroke:#3fb950}
+      .opt{fill:#3b2e00;stroke:#d29922}
+      .zone{stroke:#6e7681}
+      .h{fill:#e6edf3}
+      .s,.lb,.z{fill:#9198a1}
+      .ln{stroke:#8b949e}
+      .lo{stroke:#d29922}
+      .ah{fill:#8b949e}
+      .ao{fill:#d29922}
+    }
+  </style>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker>
+    <marker id="o" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path class="ao" d="M0,0 L10,5 L0,10 z"/></marker>
+  </defs>
+  <rect class="bg" width="960" height="640" rx="12"/>
+
+  <!-- zones -->
+  <rect class="zone" x="12" y="28" width="296" height="476" rx="12"/>
+  <text class="z" x="24" y="22">Your Chrome profile (optional)</text>
+  <rect class="zone" x="324" y="28" width="300" height="588" rx="12"/>
+  <text class="z" x="336" y="22">Page path (article, images)</text>
+  <rect class="zone" x="640" y="28" width="308" height="588" rx="12"/>
+  <text class="z" x="652" y="22">Media path (video, audio)</text>
+
+  <!-- credentials column -->
+  <rect class="opt" x="44" y="44" width="252" height="90" rx="10"/>
+  <text class="h" x="170" y="70" text-anchor="middle">Session Bridge extension</text>
+  <text class="s" x="170" y="90" text-anchor="middle">you authorize each domain in the popup</text>
+  <text class="s" x="170" y="106" text-anchor="middle">get_session → cookies + user agent</text>
+  <text class="s" x="170" y="122" text-anchor="middle">over ws://127.0.0.1:19876 only</text>
+
+  <rect class="opt" x="44" y="160" width="252" height="90" rx="10"/>
+  <text class="h" x="170" y="186" text-anchor="middle">YouTube PO-token mint</text>
+  <text class="s" x="170" y="206" text-anchor="middle">needs youtube.com permission</text>
+  <text class="s" x="170" y="222" text-anchor="middle">background tab reads visitor data,</text>
+  <text class="s" x="170" y="238" text-anchor="middle">tries WebPoClient → PO token</text>
+
+  <rect class="acc" x="44" y="276" width="252" height="90" rx="10"/>
+  <text class="h" x="170" y="302" text-anchor="middle">Credential broker</text>
+  <text class="s" x="170" y="322" text-anchor="middle">one snapshot per platform + domains</text>
+  <text class="s" x="170" y="338" text-anchor="middle">process memory only, never on disk</text>
+  <text class="s" x="170" y="354" text-anchor="middle">refreshed after an auth failure</text>
+
+  <rect class="box" x="44" y="392" width="252" height="100" rx="10"/>
+  <text class="h" x="170" y="418" text-anchor="middle">Without the extension</text>
+  <text class="s" x="170" y="438" text-anchor="middle">public pages and anonymous downloads</text>
+  <text class="s" x="170" y="454" text-anchor="middle">still work; login-only content and</text>
+  <text class="s" x="170" y="470" text-anchor="middle">Xiaohongshu fail with auth_required</text>
+
+  <!-- page column -->
+  <rect class="box" x="336" y="44" width="276" height="74" rx="10"/>
+  <text class="h" x="474" y="70" text-anchor="middle">1. Plan the URL</text>
+  <text class="s" x="474" y="90" text-anchor="middle">clear video URL → transcribe;</text>
+  <text class="s" x="474" y="106" text-anchor="middle">otherwise probe the page first</text>
+
+  <rect class="acc" x="336" y="160" width="276" height="90" rx="10"/>
+  <text class="h" x="474" y="186" text-anchor="middle">2. Page request (curl_cffi)</text>
+  <text class="s" x="474" y="206" text-anchor="middle">one session per task, Chrome 146 TLS</text>
+  <text class="s" x="474" y="222" text-anchor="middle">and HTTP/2 profile; HTTPS, public IP</text>
+  <text class="s" x="474" y="238" text-anchor="middle">checked per hop, resolved IP pinned</text>
+
+  <rect class="box" x="336" y="276" width="276" height="90" rx="10"/>
+  <text class="h" x="474" y="302" text-anchor="middle">3. Content probe</text>
+  <text class="s" x="474" y="322" text-anchor="middle">site adapters, Trafilatura fallback</text>
+  <text class="s" x="474" y="338" text-anchor="middle">finds article, images, media links;</text>
+  <text class="s" x="474" y="354" text-anchor="middle">expands oEmbed players</text>
+
+  <rect class="opt" x="336" y="392" width="276" height="100" rx="10"/>
+  <text class="h" x="474" y="418" text-anchor="middle">4. JS render (policy-based)</text>
+  <text class="s" x="474" y="438" text-anchor="middle">Playwright + installed Microsoft Edge,</text>
+  <text class="s" x="474" y="454" text-anchor="middle">fresh context, scoped cookies;</text>
+  <text class="s" x="474" y="470" text-anchor="middle">WeChat always, Zhihu/Toutiao on miss</text>
+  <text class="s" x="474" y="486" text-anchor="middle">then the probe runs again</text>
+
+  <rect class="grn" x="336" y="526" width="276" height="74" rx="10"/>
+  <text class="h" x="474" y="552" text-anchor="middle">article.md + images/</text>
+  <text class="s" x="474" y="572" text-anchor="middle">images fetched by the same session</text>
+  <text class="s" x="474" y="588" text-anchor="middle">(size, count and timeout limits)</text>
+
+  <!-- media column -->
+  <rect class="acc" x="652" y="160" width="284" height="90" rx="10"/>
+  <text class="h" x="794" y="186" text-anchor="middle">5. yt-dlp download</text>
+  <text class="s" x="794" y="206" text-anchor="middle">curl_cffi handler, impersonate chrome-146</text>
+  <text class="s" x="794" y="222" text-anchor="middle">Deno + yt-dlp-ejs for JS challenges;</text>
+  <text class="s" x="794" y="238" text-anchor="middle">retries, risk back-off, fallback format</text>
+
+  <rect class="box" x="652" y="276" width="284" height="90" rx="10"/>
+  <text class="h" x="794" y="302" text-anchor="middle">6. Session policy</text>
+  <text class="s" x="794" y="322" text-anchor="middle">session-first platforms: cookies now</text>
+  <text class="s" x="794" y="338" text-anchor="middle">others: anonymous, then one retry with</text>
+  <text class="s" x="794" y="354" text-anchor="middle">cookies after an auth-type error</text>
+
+  <rect class="opt" x="652" y="392" width="284" height="100" rx="10"/>
+  <text class="h" x="794" y="418" text-anchor="middle">7. YouTube only</text>
+  <text class="s" x="794" y="438" text-anchor="middle">cookies.txt + extractor args</text>
+  <text class="s" x="794" y="454" text-anchor="middle">visitor_data / po_token (player scope);</text>
+  <text class="s" x="794" y="470" text-anchor="middle">PO-token provider plugin can ask the</text>
+  <text class="s" x="794" y="486" text-anchor="middle">bridge for player/GVS tokens</text>
+
+  <rect class="grn" x="652" y="526" width="284" height="74" rx="10"/>
+  <text class="h" x="794" y="552" text-anchor="middle">FFmpeg → media/</text>
+  <text class="s" x="794" y="572" text-anchor="middle">original file + browser playback copy,</text>
+  <text class="s" x="794" y="588" text-anchor="middle">audio for speech recognition</text>
+
+  <!-- flow arrows -->
+  <path class="ln" d="M474,118 L474,158" marker-end="url(#a)"/>
+  <path class="ln" d="M612,81 C720,81 794,110 794,158" marker-end="url(#a)"/>
+  <text class="lb" x="700" y="76">video URL / direct media</text>
+  <path class="ln" d="M474,250 L474,274" marker-end="url(#a)"/>
+  <path class="lo" d="M560,366 L560,390" marker-end="url(#o)"/>
+  <path class="lo" d="M390,390 L390,368" marker-end="url(#o)"/>
+  <text class="lb" x="568" y="383">render</text>
+  <text class="lb" x="398" y="383">re-probe</text>
+  <path class="ln" d="M612,296 L630,296 L630,205 L650,205" marker-end="url(#a)"/>
+  <path class="ln" d="M336,346 C318,346 318,563 334,563" marker-end="url(#a)"/>
+  <path class="ln" d="M794,250 L794,274" marker-end="url(#a)"/>
+  <path class="lo" d="M794,366 L794,390" marker-end="url(#o)"/>
+  <path class="ln" d="M936,321 C952,321 952,563 938,563" marker-end="url(#a)"/>
+
+  <!-- credential arrows -->
+  <path class="ln" d="M44,89 L32,89 L32,321 L42,321" marker-end="url(#a)"/>
+  <path class="lo" d="M230,250 L230,274" marker-end="url(#o)"/>
+  <text class="lb" x="238" y="267">YouTube</text>
+  <path class="ln" d="M296,321 L316,321 L316,263 L720,263 L720,274" marker-end="url(#a)"/>
+  <path class="ln" d="M316,263 L316,215 L334,215" marker-end="url(#a)"/>
+  <text class="lb" x="500" y="259">cookies (memory)</text>
+  <path class="lo" d="M652,470 L636,470 L636,509 L304,509 L304,205 L298,205" marker-end="url(#o)"/>
+  <text class="lb" x="420" y="505">PO-token requests (plugin)</text>
+</svg>
