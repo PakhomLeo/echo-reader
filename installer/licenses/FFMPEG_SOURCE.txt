@@ -39,7 +39,7 @@ scripts to its GitHub releases (https://github.com/PakhomLeo/echo-reader/release
   ffmpeg-n8.1.2-34-g9b6c8969e0.tar.xz
       exact source of commit 9b6c8969e05b4f0b29f0f85cd501be6b3e582e6b (n8.1.2 plus 34
       commits on release/8.1), the commit this build was made from
-  ffmpeg-8.1.2.tar.xz, ffmpeg-8.1.2.tar.xz.asc, ffmpeg-n8.1.2..9b6c8969e0.patch
+  ffmpeg-8.1.2.tar.xz, ffmpeg-8.1.2.tar.xz.asc, ffmpeg-n8.1.2.9b6c8969e0.patch
       the signed upstream 8.1.2 release and the 34 commits on top of it
   FFmpeg-Builds-autobuild-2026-07-31-14-10.tar.xz
       the BtbN build scripts used for this build
