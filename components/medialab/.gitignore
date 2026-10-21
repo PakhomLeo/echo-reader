@@ -1,0 +1,24 @@
+# 密钥与敏感配置，绝不提交
+secrets.toml
+config/secrets.toml
+
+# 运行时产物
+delivery/
+tmp/
+out/
+*.db
+__pycache__/
+*.pyc
+*.egg-info
+.venv/
+.pytest_cache/
+
+# cookie 文件（平台登录凭证）
+cookies.txt
+douyin_cookies.txt
+youtube_cookies.txt
+*_cookies*.txt
+
+# 基准测试产物（本地证据，不入库）
+bench/
+bench2/

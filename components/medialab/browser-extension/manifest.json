@@ -1,0 +1,31 @@
+{
+  "manifest_version": 3,
+  "name": "medialab Session Bridge",
+  "version": "0.3.0",
+  "description": "向 medialab 本地服务安全导出当前 Chrome profile 的会话凭据。",
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "permissions": [
+    "storage",
+    "cookies",
+    "scripting",
+    "alarms"
+  ],
+  "optional_host_permissions": ["https://*/*"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "medialab Session Bridge",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png"
+    }
+  }
+}

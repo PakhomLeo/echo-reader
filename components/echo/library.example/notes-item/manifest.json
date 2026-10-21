@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "id": "01J4R7ZQ6YEPNXQFSX3B9S8A2W",
+  "created_at": "2026-08-06T19:00:00+08:00",
+  "updated_at": "2026-08-06T19:00:00+08:00",
+  "source": {
+    "type": "article",
+    "url": "https://example.com/notes"
+  },
+  "article": {
+    "path": "article.md",
+    "content_source": "content.json"
+  },
+  "transcript": {
+    "path": "transcript.json",
+    "language": "zh-CN"
+  },
+  "primary_media": null
+}

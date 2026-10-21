@@ -1,0 +1,64 @@
+# Workspace tooling
+.cache/
+models/
+*.onnx
+*.bin
+*.safetensors
+*.pt
+*.gguf
+.mise/
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+
+# Echo Reader runtime state
+.runtime/
+out/
+tmp/
+*.db
+*.db-*
+config/secrets.toml
+/config/app.json
+/config/.app.json.tmp
+secrets.toml
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.p12
+*.pfx
+*.cookies
+*cookies*.txt
+library/*
+!library/.gitkeep
+content/*
+!content/.gitkeep
+
+# Local real-world test inputs and unredacted historical evidence
+*-video-links.txt
+docs/live-platform-test-*.md
+docs/reports/
+
+# Component runtime state and credentials
+components/medialab/config/secrets.toml
+components/medialab/delivery/
+components/medialab/tmp/
+components/medialab/out/
+components/medialab/*.db
+components/medialab/*.db-*
+components/echo/library/
+components/echo/backend/target/
+components/echo/frontend/node_modules/
+components/echo/frontend/dist/
+components/echo/frontend/test-results/
+components/echo/frontend/playwright-report/
+components/echo/frontend/.tmp-library/
+
+# Editors and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

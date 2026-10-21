@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "blocks": [
+    {
+      "type": "heading",
+      "level": 1,
+      "text": "人工智能与个人知识管理"
+    },
+    {
+      "type": "paragraph",
+      "markdown": "这是示例文章的第一段，用来验证 Markdown 阅读与排版。其中可以包含 **粗体**、*斜体* 和 [外部链接](https://example.com/article)。"
+    },
+    {
+      "type": "image",
+      "path": "images/0001.webp",
+      "alt": "访谈现场",
+      "caption": "嘉宾在访谈现场"
+    },
+    {
+      "type": "paragraph",
+      "markdown": "图片之后的内容，验证图片位置与正文顺序一致。"
+    },
+    {
+      "type": "blockquote",
+      "markdown": "技术的目标应当是减少人的认知负担。"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "要点回顾"
+    },
+    {
+      "type": "unordered_list",
+      "markdown": "- 阅读与校对是第一优先级\n- 播放器与转录保持结构化数据\n- Markdown 只承担正文"
+    },
+    {
+      "type": "image",
+      "path": "images/0002.jpg",
+      "alt": "演示截图",
+      "caption": null
+    },
+    {
+      "type": "ordered_list",
+      "markdown": "1. 打开阅读页\n2. 播放媒体\n3. 校对转录"
+    },
+    {
+      "type": "paragraph",
+      "markdown": "最后一张图片用于验证多图片顺序："
+    },
+    {
+      "type": "image",
+      "path": "images/0003.png",
+      "alt": "结尾插图",
+      "caption": null
+    },
+    {
+      "type": "horizontal_rule"
+    },
+    {
+      "type": "paragraph",
+      "markdown": "示例结束。"
+    }
+  ]
+}

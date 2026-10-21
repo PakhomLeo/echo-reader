@@ -1,0 +1,4 @@
+[tools]
+python = "3.12.11"
+deno = "2.9.4"
+"github:BtbN/FFmpeg-Builds" = "autobuild-2026-07-31-14-10"

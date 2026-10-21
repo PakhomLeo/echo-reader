@@ -1,0 +1,69 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python:
+    name: Python (import service + MediaLab)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v7
+        with:
+          python-version: "3.12"
+          enable-cache: true
+      - name: Install
+        run: uv sync --locked
+      - name: Compile
+        run: uv run python -m compileall -q src components/medialab/src tests components/medialab/tests
+      - name: Test
+        # Optional extras (local-asr, funasr) are not installed; their tests use stand-ins.
+        run: uv run pytest -q tests components/medialab/tests
+
+  rust:
+    name: Rust (Echo API)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: components/echo/backend
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: components/echo/backend
+      - run: cargo fmt --check
+      - run: cargo clippy --all-targets --locked -- -D warnings
+      - run: cargo test --locked
+
+  frontend:
+    name: Frontend (reader UI)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: components/echo/frontend
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.14"
+      - run: bun install --frozen-lockfile
+      - run: bun run typecheck
+      - run: bun run lint
+      - run: bun run test
+      - run: bun run build

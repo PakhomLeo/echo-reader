@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "language": "zh-CN",
+  "media_id": "primary",
+  "segments": [
+    { "id": "segment_000001", "start_ms": 0, "end_ms": 2000, "speaker": "主持人", "text": "欢迎大家来到今天的节目。" },
+    { "id": "segment_000002", "start_ms": 2000, "end_ms": 4200, "speaker": "嘉宾", "text": "今天我们讨论个人知识管理。" },
+    { "id": "segment_000003", "start_ms": 4200, "end_ms": 6400, "speaker": "嘉宾", "text": "知识管理的关键在于整理与回顾。" },
+    { "id": "segment_000004", "start_ms": 6400, "end_ms": 8600, "speaker": "主持人", "text": "那么你如何看待工具的选择？" },
+    { "id": "segment_000005", "start_ms": 8600, "end_ms": 10800, "speaker": "嘉宾", "text": "工具应当保持简单，减少认知负担。" },
+    { "id": "segment_000006", "start_ms": 10800, "end_ms": 13000, "speaker": "嘉宾", "text": "复杂的系统最终会被用户放弃。" },
+    { "id": "segment_000007", "start_ms": 13000, "end_ms": 15200, "speaker": "主持人", "text": "可以举一个具体的例子吗？" },
+    { "id": "segment_000008", "start_ms": 15200, "end_ms": 17400, "speaker": "嘉宾", "text": "比如每天记录三条最重要的想法。" },
+    { "id": "segment_000009", "start_ms": 17400, "end_ms": 19600, "speaker": "嘉宾", "text": "长期积累后就能形成自己的知识体系。" },
+    { "id": "segment_000010", "start_ms": 19600, "end_ms": 20000, "speaker": "主持人", "text": "感谢今天的分享，我们下期再见。" }
+  ]
+}

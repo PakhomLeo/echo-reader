@@ -1,0 +1,59 @@
+name: Bug report
+description: Report a reproducible defect
+title: "[Bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        Do not include API keys, cookies, tokens, private URLs, or private content.
+        Replace them with placeholders before posting logs or screenshots.
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What happened, and what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Start the reader / import service with ...
+        2. Import a public test URL ...
+        3. Observe ...
+    validations:
+      required: true
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      options:
+        - Reader UI (components/echo/frontend)
+        - Echo API (components/echo/backend)
+        - Import service / CLI (src/echo_reader)
+        - MediaLab capture / download / ASR (components/medialab)
+        - Browser extension
+        - Installer / desktop app
+        - Documentation
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: Windows 11 / Ubuntu 24.04 / macOS 15
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Sanitized logs
+      render: shell

@@ -1,0 +1,25 @@
+# mise
+.mise.toml
+.mise/
+
+# Rust
+backend/target/
+
+# Node / bun
+node_modules/
+frontend/dist/
+*.tsbuildinfo
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Playwright / test artifacts
+frontend/test-results/
+frontend/playwright-report/
+frontend/.tmp-library/
+
+# 用户资料库（内容处理模块产出，不入库）
+/library/

@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "language": "zh-CN",
+  "media_id": "primary",
+  "segments": [
+    { "id": "segment_000001", "start_ms": 0, "end_ms": 3000, "speaker": "主播", "text": "欢迎收听本期播客。" },
+    { "id": "segment_000002", "start_ms": 3000, "end_ms": 6000, "speaker": "主播", "text": "本期我们聊聊音频转录的校对流程。" },
+    { "id": "segment_000003", "start_ms": 6000, "end_ms": 9000, "speaker": "主播", "text": "只有转录没有文章时，应用直接进入时间线模式。" },
+    { "id": "segment_000004", "start_ms": 9000, "end_ms": 12000, "speaker": "主播", "text": "感谢收听，下期再见。" }
+  ]
+}

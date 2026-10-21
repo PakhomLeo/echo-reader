@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "id": "01J4R7ZQ6YEPNXQFSX3B9S8A2X",
+  "created_at": "2026-08-06T18:00:00+08:00",
+  "updated_at": "2026-08-06T18:00:00+08:00",
+  "source": {
+    "type": "audio",
+    "url": "https://example.com/podcast"
+  },
+  "article": {
+    "path": "article.md",
+    "content_source": "content.json"
+  },
+  "transcript": {
+    "path": "transcript.json",
+    "language": "zh-CN"
+  },
+  "primary_media": {
+    "type": "audio",
+    "original_path": "media/original.wav",
+    "playback_path": "media/playback.m4a",
+    "mime_type": "audio/mp4",
+    "title": "示例播客音频"
+  }
+}

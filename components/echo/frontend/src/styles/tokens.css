@@ -1,0 +1,36 @@
+:root {
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", "Noto Sans SC",
+    "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-mono: "SFMono-Regular", "Cascadia Code", "Roboto Mono", monospace;
+
+  --color-app-bg: #f3efe9;
+  --color-sidebar-bg: #eee8df;
+  --color-list-bg: #f7f3ed;
+  --color-reading-bg: #fffdf9;
+  --color-surface: #fffdf9;
+
+  --color-text-primary: #2e2925;
+  --color-text-secondary: #706861;
+  --color-text-tertiary: #9b9189;
+
+  --color-border: rgba(26, 26, 31, 0.08);
+  --color-border-strong: rgba(26, 26, 31, 0.14);
+
+  --color-hover: rgba(26, 26, 31, 0.05);
+  --color-selected: rgba(26, 26, 31, 0.07);
+
+  --color-accent: #d65436;
+  --color-accent-soft: #faeae4;
+  --color-danger: #c0392b;
+
+  --radius-small: 8px;
+  --radius-medium: 12px;
+  --radius-large: 16px;
+
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.04), 0 10px 32px rgba(0, 0, 0, 0.06);
+
+  --sidebar-expanded: 210px;
+  --sidebar-collapsed: 60px;
+  --content-width: 920px;
+}

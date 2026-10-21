@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>medialab Session Bridge</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+
+  <!-- ========== 主视图：日常只看到状态 ========== -->
+  <main id="view-main" class="view">
+    <div class="status-card" id="statusCard">
+      <div class="status-dot" id="statusDot"></div>
+      <div class="status-text" id="statusText">加载中…</div>
+      <div class="status-sub" id="statusSub"></div>
+    </div>
+
+    <!-- 首次引导：已连接但未授权时出现一次，可关闭（Q3） -->
+    <section id="setupGuide" class="guide hidden">
+      <div class="guide-text">授权平台域名后即可开始抓取。</div>
+      <button id="authorizeAll" class="btn primary">一键授权全部平台</button>
+      <button id="closeGuide" class="btn ghost">以后再说</button>
+    </section>
+
+    <footer class="footer-row">
+      <span class="hint" id="hintText"></span>
+      <button id="openSettings" class="icon-btn" title="设置" aria-label="设置">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3.2"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      </button>
+    </footer>
+  </main>
+
+  <!-- ========== 设置视图：齿轮进入（Q2 三段式） ========== -->
+  <main id="view-settings" class="view hidden">
+    <header class="settings-header">
+      <button id="backMain" class="icon-btn" title="返回" aria-label="返回">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M15 18l-6-6 6-6"/>
+        </svg>
+      </button>
+      <span class="settings-title">设置</span>
+    </header>
+
+    <section class="card">
+      <div class="card-title">连接</div>
+      <div class="row">
+        <span class="row-label">本地服务端口</span>
+        <code id="portDisplay" class="mono">19876</code>
+      </div>
+      <div class="row">
+        <span class="row-label">连接状态</span>
+        <span id="connDetail" class="detail">—</span>
+      </div>
+      <div class="row row-buttons">
+        <button id="reconnect" class="btn ghost small">重新连接</button>
+      </div>
+      <div id="settingsFeedback" class="feedback" role="status"></div>
+    </section>
+
+    <section class="card">
+      <div class="card-title">平台白名单</div>
+      <div class="row">
+        <span id="authSummary" class="detail">已授权 0/0</span>
+        <button id="authorizeAll2" class="btn primary small">一键授权</button>
+      </div>
+      <div class="collapse">
+        <button id="toggleDomains" class="collapse-head">
+          <svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+          管理域名
+        </button>
+        <div id="domainList" class="collapse-body hidden"></div>
+        <div id="addDomainRow" class="row hidden">
+          <input id="newDomain" type="text" placeholder=".example.com" spellcheck="false">
+          <button id="addDomain" class="btn ghost small">添加</button>
+          <button id="resetWhitelist" class="btn ghost small">恢复默认</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-title">关于</div>
+      <div class="row"><span class="row-label">版本</span><span class="detail">0.1.0</span></div>
+      <div class="row"><span class="row-label">扩展 ID</span><code id="extId" class="mono">—</code></div>
+      <p class="about-note">为本地 medialab 服务提供浏览器会话。按域名授权、按需输出，数据仅发往 127.0.0.1 的本地服务，不上传任何云端。</p>
+    </section>
+  </main>
+
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -1,0 +1,165 @@
+# medialab 默认配置。宿主可用 DownloadService(config={...}) 覆盖任意字段。
+
+[concurrency]
+# 每个流水线阶段（下载/抓取/ASR/润色）各自的并发上限，阶段间互不占槽
+max_concurrent = 3
+
+[platforms]
+# 启用的 yt-dlp extractor 名正则；generic 是未知视频直链兜底。
+enabled = [
+  "bilibili.*", "douyin.*", "youtube.*", "twitter.*",
+  "tiktok.*", "vm[.]tiktok", "vimeo.*", "twitch.*",
+  "instagram.*", "facebook.*", "generic",
+]
+# 会话域的代码级权威表位于 medialab.platforms；宿主仍可显式覆盖 session_domains。
+
+[paths]
+# 留空时自动指向当前 monorepo 的 content/；独立安装时为 cwd/content。
+# LIBRARY_ROOT 或宿主显式 paths.delivery 仍可覆盖。
+delivery = ""
+temp = "tmp"
+db = "medialab.db"
+
+[download]
+format = "bv*+ba/b"
+merge_output_format = "mp4"
+retries = 10
+fragment_retries = 10
+concurrent_fragment_downloads = 4
+risk_retries = 3
+risk_backoff_base = 30
+fallback_format = "b/best"
+proxy = ""
+# JS challenge 运行时：yt-dlp-ejs（本地包，随 yt-dlp 一起升级）+ Deno
+js_runtimes = ["deno"]
+remote_components = []
+# 匿名优先：名单外平台先无 Cookie 尝试，auth 类失败才升级会话；名单内平台默认直接带会话
+session_first_platforms = ["bilibili", "douyin", "youtube", "x", "tiktok", "vimeo", "twitch", "instagram", "facebook"]
+
+[article]
+# Python 内容请求统一使用 curl_cffi Chrome 146 网络画像；不手写 User-Agent。
+direct_timeout = 15
+# 直连代理（空 = 直连；海外站点如 x.com/medium 需要时配置，如 http://127.0.0.1:10808）
+proxy = ""
+# 正文判定：提取出的文本少于该字符数视为无有效正文
+min_text_chars = 200
+# 图片下载
+max_images = 100
+image_timeout = 30
+max_image_bytes = 15728640
+
+[js_render]
+# 未列出的平台默认关闭；微信需要真实打开页面触发懒加载，知乎/头条仅静态缺失时升级。
+enabled = true
+platform_modes = { wechat = "always", zhihu = "on_miss", toutiao = "on_miss" }
+resource_domains = [
+  ".weixin.qq.com", ".qq.com", ".qpic.cn",
+  ".zhihu.com", ".zhimg.com",
+  ".toutiao.com", ".byteimg.com", ".bytecdn.cn",
+]
+timeout_seconds = 20
+max_requests = 80
+max_bytes = 10485760
+scroll_steps = 6
+scroll_delay_ms = 300
+
+[content_capture]
+# 一个 URL 形成一个条目；自动模式会抓取该页面发现的全部有限媒体。
+# 超过上限时明确失败而不是静默截断，避免频道/无限列表失控。
+max_media_items = 50
+
+[audio]
+# 空 = 自动探测（配置路径 -> PATH -> mise）
+ffmpeg_path = ""
+
+[progress]
+# 进度事件节流（秒）
+throttle = 1.0
+
+[oss]
+# 启用规则：secrets.toml [oss] 密钥齐全即启用（无独立开关）
+presign_expires = 86400
+max_batches = 10
+ttl_seconds = 10800
+slice_seconds = 60
+overlap_seconds = 1
+
+[asr]
+model = "qwen-audio-3.0-asr-flash-filetrans"
+language_hints = ["zh", "en"]
+diarization_enabled = true
+speaker_count = 0
+poll_interval = 2.0
+poll_max_interval = 5.0
+max_wait_seconds = 1800
+# 切片转写并发数（RPM 600 允许 3-5；1 小时音频约 60 片，3 并发约 3-4 分钟）
+slice_concurrency = 3
+
+[local_asr]
+# 本地识别引擎：
+#   "openvino_whisper"  默认；OpenVINO Whisper（Intel GPU）+ sherpa-onnx VAD/说话人分离（extra: local-asr）
+#   "funasr_nano"       Fun-ASR-Nano（FunASR，CPU/CUDA/MPS/XPU）+ CAM++ 说话人分离（extra: funasr）
+engine = "openvino_whisper"
+model_dir = ".runtime/models/local-asr"
+model_id = "OpenVINO/whisper-small-int8-ov"
+revision = "8c593cfd15717c025c5ef99ea0b1879c88d03ed2"
+device = "GPU"
+auto_download = true
+cache_dir = ".runtime/cache/openvino/local-asr"
+cluster_threshold = 0.9
+vad_threshold = 0.5
+vad_min_silence = 0.5
+vad_min_speech = 0.25
+vad_max_speech = 30.0
+vad_window_size = 512
+vad_buffer_seconds = 120
+vad_num_threads = 1
+diarization_num_threads = 1
+diarization_min_duration_on = 0.3
+diarization_min_duration_off = 0.5
+
+[local_asr.funasr]
+# 仅 engine = "funasr_nano" 时生效。模型由 FunASR 下载到用户模型缓存，不写入仓库或资料库。
+# Fun-ASR-Nano 的模型代码随权重发布，需要 trust_remote_code = true 才能加载；
+# 关闭后该模型无法加载。
+model = "FunAudioLLM/Fun-ASR-Nano-2512"
+trust_remote_code = true
+hub = "hf"
+auxiliary_hub = "ms"
+vad_model = "fsmn-vad"
+vad_max_single_segment_time = 10000
+punc_model = ""
+spk_model = "cam++"
+spk_mode = "vad_segment"
+device = "auto"
+language = "auto"
+hotwords = []
+
+[refine]
+# 转写流程最后一步：把带说话人的转写稿润色为可读文章。
+# provider:
+#   "dashscope"          默认；DashScope OpenAI 兼容模式，api_key 缺省复用 [asr].api_key
+#   "openai_compatible"  任意 OpenAI 兼容服务；必须设置 base_url 与 model，
+#                        非本机地址还需要 secrets.toml [refine].api_key
+#   "ollama"             本机 Ollama（base_url 缺省 http://127.0.0.1:11434/v1）；必须设置 model，
+#                        例如 "qwen2.5:7b"
+# base_url / model 留空时使用所选 provider 的默认值（dashscope：qwen3.7-flash +
+# https://dashscope.aliyuncs.com/compatible-mode/v1）。
+enabled = true
+provider = "dashscope"
+model = ""
+base_url = ""
+temperature = 0.3
+# 单次请求输入上限（字符），超出按行分批逐批润色后合并
+max_input_chars = 24000
+timeout_seconds = 300
+max_retries = 2
+# 输出上限（token）：qwen3.7-flash 在"改写文章"任务上偶发输出爆炸（复述原文可到 10 万+ token，
+# 非流式请求必须等全部输出 → 15-20 分钟假挂起）。max_tokens 截断爆炸，避免拖死任务。
+max_tokens = 12000
+# 总输入超过 max_input_chars × 该倍数时，单块上限自动压到 max(4000, max_input_chars//3)
+shrink_threshold = 2
+# 段落开头的说话人前缀，输出形如"说话人0：..."
+speaker_label = "说话人"
+# 英文内容自动生成中文版文章：转写文本汉字占比低于该阈值视为英文（0=关闭）
+zh_threshold = 0.2

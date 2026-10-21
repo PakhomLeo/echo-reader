@@ -1,0 +1,75 @@
+.app-shell {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+.app-shell-main {
+  flex: 1;
+  min-width: 0;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--color-reading-bg);
+}
+.app-shell.shell-tasks .app-shell-main { background: var(--color-reading-bg); }
+.placeholder {
+  height: 100%;
+  display: grid;
+  place-items: center;
+  padding: 40px;
+}
+.onboarding {
+  max-width: 510px;
+  text-align: center;
+}
+.onboarding-mark {
+  display: grid;
+  place-items: center;
+  margin: 0 auto 22px;
+  width: 48px;
+  height: 48px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 50%;
+  color: var(--color-accent);
+}
+.onboarding h2 {
+  font-family: Georgia, "Noto Serif SC", serif;
+  font-size: 34px;
+  line-height: 1.2;
+  margin: 0;
+}
+.onboarding > p {
+  color: var(--color-text-secondary);
+  margin: 14px 0 24px;
+}
+.onboarding button {
+  border: 0;
+  background: var(--color-accent);
+  color: #fff;
+  border-radius: 8px;
+  padding: 10px 17px;
+  font-weight: 650;
+}
+.onboarding-types {
+  display: flex;
+  justify-content: center;
+  gap: 22px;
+  margin-top: 30px;
+  color: var(--color-text-tertiary);
+  font-size: 13px;
+}
+.onboarding-types span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+@media (max-width: 760px) {
+  .app-shell-main {
+    display: none;
+  }
+  .app-shell.shell-reading .app-shell-main {
+    display: block;
+    width: 100%;
+  }
+  .app-shell.shell-tasks .app-shell-main { display: block; width: 100%; }
+  .app-shell.shell-tasks .sidebar { display: none; }
+}
